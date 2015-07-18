@@ -16,7 +16,11 @@ ID_ABOUT=101
 ID_IBMCFG=102
 ID_EXIT=110
 
+
 def createtxtED(mapa,dirs):
+  """
+  Cria um txt com os valores eh ha de borda, interio e area nucleo
+  """
   x=grass.read_command('r.stats',flags='a',input=mapa)
   
   y=x.split('\n')
