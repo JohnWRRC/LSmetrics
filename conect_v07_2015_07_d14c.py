@@ -143,8 +143,8 @@ def escala_con(mapa,esc):
   listametersfinal=[]  
   for i in esclist:
     esc=int(i)
-    escfina1=(esc*2)/res3
-    escfinaMeters=(esc*2)/res3
+    escfina1=(esc)/res3
+    escfinaMeters=(esc)/res3
     escfina1=int(round(escfina1, ndigits=0))  
     if escfina1%2==0:
       escfina1=int(escfina1)
@@ -165,12 +165,14 @@ def escala_frag(mapa,esc):
   res=grass.read_command('g.region',rast=mapa,flags='m')
   res2=res.split('\n')
   res3=res2[5]
-  res3=float(res3.replace('ewres=',''))   
+  res3=float(res3.replace('ewres=',''))
+  print "res mapa >>>>>>>",res3
   listasizefinal=[]
   listametersfinal=[]
   for i in esclist:
     esc=int(i)
     escfina1=esc/res3
+    escfina1=escfina1/2
     escfinaMeters=esc/2
     escfina1=int(round(escfina1, ndigits=0))
     print 
@@ -196,6 +198,7 @@ def areaFrag(ListmapsFrag):
     x=0
     for a in Lista_escalafragM:
       meters=int(listmeters[x])
+      #print a
       grass.run_command('r.neighbors',input=i,output=i+"_ero_"+`meters`+'m',method='minimum',size=a,overwrite = True)
       grass.run_command('r.neighbors',input=i+"_ero_"+`meters`+'m',output=i+"_dila_"+`meters`+'m',method='maximum',size=a,overwrite = True)
       expressao1=i+"_FRAG"+`meters`+"m_mata=if("+i+"_dila_"+`meters`+'m'+">0,"+i+"_dila_"+`meters`+'m'+",null())"
