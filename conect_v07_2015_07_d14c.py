@@ -166,7 +166,7 @@ def escala_frag(mapa,esc):
   res2=res.split('\n')
   res3=res2[5]
   res3=float(res3.replace('ewres=',''))
-  print "res mapa >>>>>>>",res3
+  
   listasizefinal=[]
   listametersfinal=[]
   for i in esclist:
