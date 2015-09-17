@@ -172,10 +172,7 @@ def escala_frag(mapa,esc):
   for i in esclist:
     esc=int(i)
     escfina1=esc/res3
-    escfina1=escfina1/2
-    escfinaMeters=esc/2
-    escfina1=int(round(escfina1, ndigits=0))
-    print 
+    escfina1=escfina1+1
     if escfina1%2==0:
       escfina1=int(escfina1)
       escfina1=escfina1+1
