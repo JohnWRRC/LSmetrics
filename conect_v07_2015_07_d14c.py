@@ -144,6 +144,7 @@ def escala_con(mapa,esc):
   for i in esclist:
     esc=int(i)
     escfina1=(esc)/res3
+    escfina1=escfina1/2
     escfinaMeters=(esc)/res3
     escfina1=int(round(escfina1, ndigits=0))  
     if escfina1%2==0:
@@ -369,7 +370,7 @@ def create_EDGE(ListmapsED,escale_ed,dirs):
   
   for i in ListmapsED:
     grass.run_command('g.region',rast=i)
-    listsize,listapoioname=escala_frag(i, escale_ed)
+    listsize,listapoioname=escala_frag(i,escale_ed)
     x=0
     for a in listsize:
       apoioname=listapoioname[x]
