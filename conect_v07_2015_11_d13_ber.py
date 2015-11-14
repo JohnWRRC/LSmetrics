@@ -35,16 +35,22 @@ ID_EXIT=110
 
 ########################
 # 1) que estranho!!! o patch da mais manchas que o frag!! sera que eh porque perdemos manchas pequenas?
+# Resposta: Sim pq o frag elimina corredores, com isso algumas manchas acabam sumindo eh normal.
 # ao mesmo tempo, separamos manchas que antes estavam juntas, o que pode aumentar...
 # 2) entender bem o patch!!
+
+
+
 # ideia: transformar o pid patch e pid frag, reclass em 1 e 0; e ai comparar ambos...
 # 3) funcao createtxt
 # tres botoes: (tem que transformar em botoes) 
 # - joga o trash fora ou nao (talvez nao pecise ser um botao...) - para deletar rasters auxiliares criados
+#     concordo
+
 # - statistics: gera arquivos de texto com as estatisticas ou nao
 # - biodim: prepara arquivos para o biodim (como PIDs, varias areas etc ou nao)
 
-# ver duvida sobre as funcoes de escala - tem diff?
+# ver duvida sobre as funcoes de escala - tem diff? Sim tem sim.
 
 # pensar em mudar o nome dos arquivos finais - podemos colocar so um conjunto de renames, ou usar nomes diferentes mesmo no fim
 # pra bater com o biodim e pra ficar mais facil de entender
@@ -155,11 +161,11 @@ def rulesreclass(mapa,dirs):
   """
   grass.run_command('g.region',rast=mapa)
   x=grass.read_command('r.stats',flags='a',input=mapa)
-  #print x
   
-  #t=grass.read_command('r.stats',flags='a',input='buffers_10000_MERGE_id2_0_clipMapa_tif_sum2')
+  
+  
   y=x.split('\n')
-  #print y
+ 
   os.chdir(dirs)
   txtsaida=mapa+'_rules.txt'
   txtreclass=open(mapa+'_rules.txt','w')
@@ -201,8 +207,12 @@ def exportPNG(mapinp=[]):
  
 ############
 # JOHN, as funcoes escala con e escala frag sao realmente diferentes?
+# sao sim Ber, depois te explico melhor como funciona
+
 # precisa das duas?
 # na pratica as escala_frag ta sendo usada para FRAG (com parm Form1.escala_frag) e para EDGE (com parm Form1.escala_ed)
+# Sim essa escala funciona para os dois, acho que podemos renomear essa funcao.
+
 # e escala_con esta sendo usada para CON (mas com parm Form1.escala_frag)
 # eh isso mesmo?!!?
 def escala_con(mapa,esc):
@@ -221,7 +231,7 @@ def escala_con(mapa,esc):
   for i in esclist:
     esc=int(i)
     escfina1=(esc)/res3
-    escfinaMeters=(esc)/res3 #essa linha/variavel nao e usada depois, a pra tirar?
+    
     escfina1=int(round(escfina1, ndigits=0))  
     if escfina1%2==0:
       escfina1=int(escfina1)
@@ -503,7 +513,7 @@ def areaconSingle(Listmapspatch):
   - generatics statistics - Area per patch (if Form1.calcStatistics == True)
   """
   
-  listescalafconM,listmeters=escala_con(Listmapspatch,Form1.escala_frag)
+  listescalafconM,listmeters=escala_con(Listmapspatch,Form1.escala_con)
   x=0
   for a in listescalafconM:
     meters=listmeters[x]
@@ -528,7 +538,7 @@ def areaconSingle(Listmapspatch):
       os.remove(nametxtreclass)      
       grass.run_command('r.out.gdal',input=Listmapspatch+"_dila_"+`meters`+'m_orig_clump',out=Listmapspatch+"_dila_"+`meters`+'m_complete_PID.tif')
     
-    #grass.run_command('g.remove',flags='f',rast='A,MapaBinario,MapaBinario_A,MapaBinario_AB,MapaBinario_ABC,MapaBinario_ABCD')  
+    
     
     if Form1.calcStatistics:
       createtxt(Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa', Form1.dirout, Listmapspatch+"_dila_"+`meters`+"m_clean_AreaHA") # clean
@@ -546,7 +556,7 @@ def areaconSingle(Listmapspatch):
       for txt in txts:
         grass.run_command('g.remove', rast=txt, flags = "f")
            
-    #grass.run_command('g.remove',flags='f',rast='A,MapaBinario,MapaBinario_A,MapaBinario_AB,MapaBinario_ABC,MapaBinario_ABCD')  
+    
     x=x+1
 
 def areacon(Listmapspatch):
@@ -559,9 +569,7 @@ def areacon(Listmapspatch):
   """
   
   for i in Listmapspatch:
-    listescalafconM,listmeters=escala_con(i,Form1.escala_frag)
-    #print '>>>>>>>>>>>',Form1.escala_frag
-    #print '>>>>>>>>>>>>>',listescalafconM
+    listescalafconM,listmeters=escala_con(i,Form1.escala_con)
     grass.run_command('g.region',rast=i)
     x=0
     for a in listescalafconM:
@@ -581,13 +589,14 @@ def areacon(Listmapspatch):
       if Form1.prepareBIODIM:
         grass.run_command('r.out.gdal',input=i+"_dila_"+`meters`+'m_orig_clump_mata_limpa',out=i+"_dila_"+`meters`+'m_clean_PID.tif')
         ########### calculando o area complete, exportanto ele e tb PID complete - precisa tambem gerar um area complete mesmo?
+        #####nao lembro rs
         nametxtreclass=rulesreclass(i+"_dila_"+`meters`+'m_orig_clump',Form1.dirout)
         grass.run_command('r.reclass',input=i+"_dila_"+`meters`+'m_orig_clump',output=i+"_dila_"+`meters`+'m_orig_clump_complete_AreaHA', rules=nametxtreclass, overwrite = True)
         grass.run_command('r.out.gdal',input=i+"_dila_"+`meters`+'m_orig_clump_complete_AreaHA',out=i+"_dila_"+`meters`+'m_complete_AreaHA.tif')  
         os.remove(nametxtreclass)      
         grass.run_command('r.out.gdal',input=i+"_dila_"+`meters`+'m_orig_clump',out=i+"_dila_"+`meters`+'m_complete_PID.tif')
       
-      #grass.run_command('g.remove',flags='f',rast='A,MapaBinario,MapaBinario_A,MapaBinario_AB,MapaBinario_ABC,MapaBinario_ABCD')  
+       
       
       if Form1.calcStatistics:
         createtxt(i+"_dila_"+`meters`+'m_orig_clump_mata_limpa', Form1.dirout, i+"_dila_"+`meters`+"m_clean_AreaHA")
@@ -607,7 +616,9 @@ def areacon(Listmapspatch):
 # Metrics for edge area (EDGE)
 
 ##############################
-# por que uma funcao so pra isso para o ED? nao precisa ne?
+# por que uma funcao so pra isso para o ED? nao precisa
+# cara eu fiz isso pq comecou dar pau quando eu colocava tudo junto, mas podemos tentar juntar
+
 def mapcalcED(expressao):
   grass.mapcalc(expressao, overwrite = True, quiet = True)        
 
@@ -765,16 +776,10 @@ class Form1(wx.Panel):
         
         #________________________________________________
 
-        #self.speciesList = ['Random walk','Core dependent','Frag. dependent', 'Habitat dependent', 'Moderately generalist', 'Highly generalist']
         Form1.speciesList=grass.mlist_grouped ('rast', pattern='(*)') ['PERMANENT']
         
         #____________________________________________________________________________
         
-        ####################################
-        # isso serve pra algo?
-        #Form1.start_popsize=5
-        #Form1.numberruns=100
-        #Form1.timesteps=200
 
 
         Form1.dirout=selecdirectori()
@@ -836,11 +841,7 @@ class Form1(wx.Panel):
         
         
         #______________________________________________________________________________________________________________
-        # the combobox Control
-        #Form1.editspeciesList=wx.ComboBox(self, 93, Form1.species_profile, wx.Point(80, 115), wx.Size(280, -1),
-        #Form1.speciesList, wx.CB_DROPDOWN)
-        #wx.EVT_COMBOBOX(self, 93, self.EvtComboBox)
-        #wx.EVT_TEXT(self, 93, self.EvtText)
+        
         
         #______________________________________________________________________________________________________________
         # Checkbox
