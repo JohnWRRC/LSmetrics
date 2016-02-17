@@ -44,11 +44,12 @@ def createtxtED(mapa,dirs):
           ha=f[1]
           ha=float(ha)
           haint=float(ha)
+         
           haint=haint/10000+1
           ##print haint
           
           ##print haint
-          
+          haint=round(haint,2)
           txtreclass.write(`ids`+','+`haint`+'\n')
   txtreclass.close()
 
@@ -144,17 +145,23 @@ def escala_con(mapa,esc):
   for i in esclist:
     esc=int(i)
     escfina1=(esc)/res3
+    escfina1=escfina1/2
     escfinaMeters=(esc)/res3
-    escfina1=int(round(escfina1, ndigits=0))  
-    if escfina1%2==0:
-      escfina1=int(escfina1)
-      escfina1=escfina1+1
+    escfina1=int(round(escfina1, ndigits=0))
+    if escfina1<3:
+      escfina1=3
       listasizefinal.append(escfina1)
       listametersfinal.append(esc)
-    else:
-      escfina1=int(round(escfina1, ndigits=0))
-      listasizefinal.append(escfina1)
-      listametersfinal.append(esc)      
+    else:  
+      if escfina1%2==0:
+        escfina1=int(escfina1)
+        escfina1=escfina1+1
+        listasizefinal.append(escfina1)
+        listametersfinal.append(esc)
+      else:
+        escfina1=int(round(escfina1, ndigits=0))
+        listasizefinal.append(escfina1)
+        listametersfinal.append(esc)      
   return listasizefinal,listametersfinal
   
   
@@ -172,19 +179,21 @@ def escala_frag(mapa,esc):
   for i in esclist:
     esc=int(i)
     escfina1=esc/res3
-    escfina1=escfina1/2
-    escfinaMeters=esc/2
-    escfina1=int(round(escfina1, ndigits=0))
-    print 
-    if escfina1%2==0:
-      escfina1=int(escfina1)
-      escfina1=escfina1+1
+    escfina1=escfina1+1
+    if escfina1<3:
+      escfina1=3
       listasizefinal.append(escfina1)
       listametersfinal.append(esc)
     else:
-      escfina1=int(round(escfina1, ndigits=0))
-      listasizefinal.append(escfina1)
-      listametersfinal.append(esc)      
+      if escfina1%2==0:
+        escfina1=int(escfina1)
+        escfina1=escfina1+1
+        listasizefinal.append(escfina1)
+        listametersfinal.append(esc)
+      else:
+        escfina1=int(round(escfina1, ndigits=0))
+        listasizefinal.append(escfina1)
+        listametersfinal.append(esc)      
   return listasizefinal,listametersfinal
 
 
@@ -372,7 +381,7 @@ def create_EDGE(ListmapsED,escale_ed,dirs):
   
   for i in ListmapsED:
     grass.run_command('g.region',rast=i)
-    listsize,listapoioname=escala_frag(i, escale_ed)
+    listsize,listapoioname=escala_frag(i,escale_ed)
     x=0
     for a in listsize:
       apoioname=listapoioname[x]
