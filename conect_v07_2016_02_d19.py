@@ -777,9 +777,9 @@ class Form1(wx.Panel):
         Form1.background_filename=[]
         
         ###########################
-        Form1.removeTrash=True
-        Form1.prepareBIODIM=True
-        Form1.calcStatistics=False
+        Form1.removeTrash=True ###########   FALTA UM BOTAO!
+        Form1.prepareBIODIM=True ###########   FALTA UM BOTAO!
+        Form1.calcStatistics=False ###########   FALTA UM BOTAO!
         
         Form1.size = 450
         Form1.hsize = 450
@@ -792,7 +792,7 @@ class Form1(wx.Panel):
         Form1.start_raio=0
         
         Form1.label_prefix=''
-        Form1.RedularExp=''
+        Form1.RegularExp=''
         Form1.listMapsPng=[]
         Form1.listMapsPngAux=[]
         Form1.contBG=0
@@ -987,17 +987,11 @@ class Form1(wx.Panel):
             if Form1.Dist==True:
               dist_edge_Single(Form1.mapa_entrada)
           else:
-            
-            ############### AQUI EU MUDEI!!! CONFERIR ISSO!!!!
-            # ESTAVA ASSIM
-            #if Form1.prepareBIODIM:
-              #Form1.ListMapsGroupCalc=grass.mlist_grouped ('rast', pattern='(*)') ['userbase']
-            #else:
-              #Form1.ListMapsGroupCalc=grass.mlist_grouped ('rast', pattern='(*)') ['PERMANENT']               
+                      
             if Form1.prepareBIODIM:
-              Form1.ListMapsGroupCalc=grass.mlist_grouped ('rast', pattern='(*)') ['userbase']
+              Form1.ListMapsGroupCalc=grass.mlist_grouped ('rast', pattern=Form1.RegularExp) ['userbase']
             else:
-              Form1.ListMapsGroupCalc=grass.mlist_grouped ('rast', pattern='(*)') ['PERMANENT']   
+              Form1.ListMapsGroupCalc=grass.mlist_grouped ('rast', pattern=Form1.RegularExp) ['PERMANENT']   
               
             if Form1.Patch==True:
               Form1.ListmapsPatch=Patch(Form1.ListMapsGroupCalc)
@@ -1047,9 +1041,9 @@ class Form1(wx.Panel):
             else:
               
               if Form1.prepareBIODIM:
-                Form1.speciesList=grass.mlist_grouped ('rast', pattern='(*)') ['userbase']
+                Form1.ListMapsGroupCalc=grass.mlist_grouped ('rast', pattern=Form1.RegularExp) ['userbase']
               else:
-                Form1.speciesList=grass.mlist_grouped ('rast', pattern='(*)') ['PERMANENT']              
+                Form1.ListMapsGroupCalc=grass.mlist_grouped ('rast', pattern=Form1.RegularExp) ['PERMANENT']                
               
               createBinarios(Form1.ListMapsGroupCalc)
           
@@ -1085,7 +1079,7 @@ class Form1(wx.Panel):
         
            
         if event.GetId()==190:
-          Form1.RedularExp=event.GetString() 
+          Form1.RegularExp=event.GetString() 
           
         if event.GetId()==191:
           Form1.escala_frag_con=event.GetString()
@@ -1129,9 +1123,9 @@ class Form1(wx.Panel):
             Form1.plotmaps=1
             
             if Form1.prepareBIODIM:
-              Form1.speciesList=grass.mlist_grouped ('rast', pattern='(*)') ['userbase']
+              Form1.listMapsPngAux=grass.mlist_grouped ('rast', pattern='(*)') ['userbase']
             else:
-              Form1.speciesList=grass.mlist_grouped ('rast', pattern='(*)') ['PERMANENT'] 
+              Form1.listMapsPngAux=grass.mlist_grouped ('rast', pattern='(*)') ['PERMANENT'] 
               
             Form1.listMapsPng=exportPNG(Form1.listMapsPngAux)
             self.Refresh()             
