@@ -316,7 +316,7 @@ def areaFragSingle(ListmapsFrag):
       if Form1.prepareBIODIM:
         txts = [ListmapsFrag+"_ero_"+`meters`+'m', ListmapsFrag+"_dila_"+`meters`+'m', ListmapsFrag+"_FRAG"+`meters`+"m_mata", ListmapsFrag+"_FRAG"+`meters`+"m_mata_lpo"]
       else:
-        txts = [ListmapsFrag+"_ero_"+`meters`+'m', ListmapsFrag+"_dila_"+`meters`+'m', ListmapsFrag+"_FRAG"+`meters`+"m_mata", ListmapsFrag+"_FRAG"+`meters`+"m_mata_lpo", ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid"]
+        txts = [ListmapsFrag+"_ero_"+`meters`+'m', ListmapsFrag+"_dila_"+`meters`+'m', ListmapsFrag+"_FRAG"+`meters`+"m_mata", ListmapsFrag+"_FRAG"+`meters`+"m_mata_lpo"] #, ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid"]
       for txt in txts:
         grass.run_command('g.remove', rast=txt, flags = "f")
     x=x+1     
@@ -374,7 +374,7 @@ def areaFrag(ListmapsFrag):
         if Form1.prepareBIODIM:
           txts = [i+"_ero_"+`meters`+'m', i+"_dila_"+`meters`+'m', i+"_FRAG"+`meters`+"m_mata", i+"_FRAG"+`meters`+"m_mata_lpo"]
         else:        
-          txts = [i+"_ero_"+`meters`+'m', i+"_dila_"+`meters`+'m', i+"_FRAG"+`meters`+"m_mata", i+"_FRAG"+`meters`+"m_mata_lpo", i+"_FRAG"+`meters`+"m_mata_clump_pid"]
+          txts = [i+"_ero_"+`meters`+'m', i+"_dila_"+`meters`+'m', i+"_FRAG"+`meters`+"m_mata", i+"_FRAG"+`meters`+"m_mata_lpo"] #, i+"_FRAG"+`meters`+"m_mata_clump_pid"]
         for txt in txts:
           grass.run_command('g.remove', rast=txt, flags = "f")
       x=x+1
@@ -426,7 +426,7 @@ def patchSingle(Listmapspatch):
     if Form1.prepareBIODIM:
       txts = [Listmapspatch+"_patch_clump", Listmapspatch+"_patch_clump_mata"]
     else:
-      txts = [Listmapspatch+"_patch_clump", Listmapspatch+"_patch_clump_mata", Listmapspatch+"_patch_clump_mata_limpa_pid"]
+      txts = [Listmapspatch+"_patch_clump", Listmapspatch+"_patch_clump_mata"] #, Listmapspatch+"_patch_clump_mata_limpa_pid"]
     for txt in txts:
       grass.run_command('g.remove', rast=txt, flags = "f")
   
@@ -470,7 +470,7 @@ def Patch(Listmapspatch):
       if Form1.prepareBIODIM:
         txts = [i+"_patch_clump", i+"_patch_clump_mata"]
       else:
-        txts = [i+"_patch_clump", i+"_patch_clump_mata", i+"_patch_clump_mata_limpa_pid"]
+        txts = [i+"_patch_clump", i+"_patch_clump_mata"]#, i+"_patch_clump_mata_limpa_pid"]
       for txt in txts:
         grass.run_command('g.remove', rast=txt, flags = "f")
     
@@ -534,7 +534,8 @@ def areaconSingle(Listmapspatch):
       if Form1.prepareBIODIM:
         txts = [Listmapspatch+"_dila_"+`meters`+'m_orig', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata']
       else:
-        txts = [Listmapspatch+"_dila_"+`meters`+'m_orig', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid']
+        txts = [Listmapspatch+"_dila_"+`meters`+'m_orig', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata']
+        #txts = [Listmapspatch+"_dila_"+`meters`+'m_orig', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid']
       for txt in txts:
         grass.run_command('g.remove', rast=txt, flags = "f")
            
@@ -604,7 +605,7 @@ def areacon(Listmapspatch):
         if Form1.prepareBIODIM:
           txts = [i+"_dila_"+`meters`+'m_orig', i+"_dila_"+`meters`+'m_orig_clump_mata']
         else:
-          txts = [i+"_dila_"+`meters`+'m_orig', i+"_dila_"+`meters`+'m_orig_clump_pid', i+"_dila_"+`meters`+'m_orig_clump_mata', i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid']
+          txts = [i+"_dila_"+`meters`+'m_orig', i+"_dila_"+`meters`+'m_orig_clump_pid', i+"_dila_"+`meters`+'m_orig_clump_mata'] #, i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid']
         for txt in txts:
           grass.run_command('g.remove', rast=txt, flags = "f")
           
@@ -777,9 +778,9 @@ class Form1(wx.Panel):
         Form1.background_filename=[]
         
         ###########################
-        Form1.removeTrash=True ###########   FALTA UM BOTAO!
-        Form1.prepareBIODIM=True ###########   FALTA UM BOTAO!
-        Form1.calcStatistics=False ###########   FALTA UM BOTAO!
+        Form1.removeTrash=True
+        Form1.prepareBIODIM=False
+        Form1.calcStatistics=True
         
         Form1.size = 450
         Form1.hsize = 450
