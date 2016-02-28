@@ -12,9 +12,9 @@
  Universidade Estadual Paulista - UNESP
  Rio Claro - SP - Brasil
  
- LS Connectivity is a software designed to calculate the landscape metrics and
+ LS Connectivity is a software designed to calculate landscape metrics and
  landscape statistics and generate maps of landscape connectivity.
- Also, the software is also designed to prepare maps and enviroment for running 
+ Also, the software is designed to prepare maps and enviroment for running 
  BioDIM, an individual-based model of animal movement in fragmented landscapes.
  The software runs in a GRASS environment and uses raster images as input.
  
@@ -135,8 +135,8 @@ def createBinarios_single(ListMapBins):
   """
   readtxt=selecdirectori()
   grass.run_command('g.region',rast=ListMapBins)
-  grass.run_command('g.region',rast=ListMapBins)
-  grass.run_command('r.reclass',input=ListMapBins,output=ListMapBins+'_bin',rules=readtxt, overwrite = True)
+  grass.run_command('r.reclass',input=ListMapBins,output=ListMapBins+'_HABMAT',rules=readtxt, overwrite = True)
+  
   if Form1.prepareBIODIM:
     Form1.speciesList=grass.mlist_grouped ('rast', pattern='(*)') ['userbase']
   else:
@@ -151,14 +151,101 @@ def createBinarios(ListMapBins):
   readtxt=selecdirectori()
   for i in ListMapBins:
     grass.run_command('g.region',rast=i)
-    grass.run_command('g.region',rast=i)
-    grass.run_command('r.reclass',input=i,output=i+'_bin',rules=readtxt, overwrite = True)
+    grass.run_command('r.reclass',input=i,output=i+'_HABMAT',rules=readtxt, overwrite = True)
     if Form1.prepareBIODIM:
       Form1.speciesList=grass.mlist_grouped ('rast', pattern='(*)') ['userbase']
     else:
       Form1.speciesList=grass.mlist_grouped ('rast', pattern='(*)') ['PERMANENT']    
     return readtxt
   
+def create_habmat_single(ListMapBins):
+  """
+  Function for a single map
+  This function reclassify an input map into a binary map, according to reclassification rules passed by
+  a text file
+  """
+  
+  # opcao 1: ler um arquivo e fazer reclass
+  # TEMOS QUE ORGANIZAR ISSO AINDA!!
+  #readtxt=selecdirectori()
+  #grass.run_command('g.region',rast=ListMapBins)
+  #grass.run_command('r.reclass',input=ListMapBins,output=ListMapBins+'_HABMAT',rules=readtxt, overwrite = True)
+  
+  # opcao 2: definir quais classes sao habitat; todas as outras serao matriz
+  if(len(Form1.list_habitat_classes) > 0):
+    
+    conditional = ''
+    cc = 0
+    for j in Form1.list_habitat_classes:
+      if cc > 0:
+        conditional = conditional+' || '
+      conditional = conditional+ListMapBins+' == '+j
+      cc += 1
+      
+    expression = ListMapBins+'_HABMAT=if('+conditional+', 1, 0)'
+    grass.run_command('g.region', rast=ListMapBins)
+    grass.mapcalc(expression, overwrite = True, quiet = True)
+    grass.run_command('r.null', map=ListMapBins+'_HABMAT', null='0') # precisa disso?? 
+  else:
+    print 'You did not type which class is habitat!! Map not generated' # organizar para dar um erro; pode ser com try except 
+    
+  if Form1.prepareBIODIM:
+    create_TXTinputBIODIM([ListMapBins+'_HABMAT'], "simulados_HABMAT", Form1.dirout)   
+  else:
+    grass.run_command('g.region', rast=ListMapBins+'_HABMAT')
+    grass.run_command('r.out.gdal', input=ListMapBins+'_HABMAT', out=ListMapBins+'_HABMAT.tif')
+  
+  if Form1.calcStatistics:
+    createtxt(ListMapBins+'_HABMAT', Form1.dirout, ListMapBins+'_HABMAT')
+
+
+def create_habmat(ListMapBins):
+  """
+  Function for a series of maps
+  This function reclassify an input map into a binary map, according to reclassification rules passed by
+  a text file
+  """
+  
+  if Form1.prepareBIODIM:
+    lista_maps_habmat=[]  
+  
+  # opcao 1: ler um arquivo e fazer reclass
+  # TEMOS QUE ORGANIZAR ISSO AINDA!!
+  #readtxt=selecdirectori()
+  #grass.run_command('g.region',rast=ListMapBins)
+  #grass.run_command('r.reclass',input=ListMapBins,output=ListMapBins+'_HABMAT',rules=readtxt, overwrite = True)
+  
+  # opcao 2: definir quais classes sao habitat; todas as outras serao matriz
+  for i in ListMapBins:
+    
+    if(len(Form1.list_habitat_classes) > 0):
+      conditional = ''
+      cc = 0
+      for j in Form1.list_habitat_classes:
+        if cc > 0:
+          conditional = conditional+' || '
+        conditional = conditional+i+' == '+j
+        cc += 1
+      
+      expression = i+'_HABMAT=if('+conditional+', 1, 0)'
+      grass.run_command('g.region', rast=i)
+      grass.mapcalc(expression, overwrite = True, quiet = True)
+      grass.run_command('r.null', map=i+'_HABMAT', null='0') # precisa disso?? 
+    else:
+      print 'You did not type which class is habitat!! Map not generated' # organizar para dar um erro; pode ser com try except 
+    
+    if Form1.prepareBIODIM:
+      lista_maps_habmat.append(i+'_HABMAT') 
+    else:
+      grass.run_command('g.region', rast=i+'_HABMAT')
+      grass.run_command('r.out.gdal', input=i+'_HABMAT', out=i+'_HABMAT.tif')
+  
+    if Form1.calcStatistics:
+      createtxt(i+'_HABMAT', Form1.dirout, i+'_HABMAT')
+      
+  if Form1.prepareBIODIM:
+    create_TXTinputBIODIM(lista_maps_habmat, "simulados_HABMAT", Form1.dirout)  
+    
 def rulesreclass(mapa,dirs):
   """
   This function sets the rules for area reclassification for patch ID, using stats -a for each patch.
@@ -775,12 +862,14 @@ class Form1(wx.Panel):
         Form1.Frag=False
         Form1.Cone=False
         Form1.Dist=True ################ mudar aqui, como ainda nao tem botao deixei para criar sempre um mapa/txt de dist
+        Form1.Habmat=True ################ mudar aqui, como ainda nao tem botao deixei para criar sempre um mapa/txt de habmat
         Form1.background_filename=[]
         
         ###########################
         Form1.removeTrash=True
         Form1.prepareBIODIM=False
         Form1.calcStatistics=True
+        Form1.list_habitat_classes=['12'] ########## adicionei isso: lista de strings com classes de habitat ########## como ler e transformar numa lista? precisa de uma funcao pra isso?
         
         Form1.size = 450
         Form1.hsize = 450
@@ -974,9 +1063,12 @@ class Form1(wx.Panel):
         #______________________________________________________________________________________________________________ 
         if event.GetId()==10:   #10==START
           
-          os.chdir(Form1.dirout) ###### adicionei essa linha aqui, acho importante ja fazer isso antes de iniciar os calculos          
+          os.chdir(Form1.dirout)         
           
           if Form1.formcalculate=="Single":
+            if Form1.Habmat: ############ adicionei isso aqui: talvez temos que aplicar as outras funcoes ja nesse mapa?
+              ###### as outras funcoes precisam de um mapa binario de entrada? ou pode ser so um mapa habitat/null?
+              create_habmat_single(Form1.mapa_entrada)            
             if Form1.Patch==True:   
               patchSingle(Form1.mapa_entrada)
             if Form1.Frag==True:
@@ -987,6 +1079,7 @@ class Form1(wx.Panel):
               create_EDGE_single(Form1.mapa_entrada, Form1.escala_ED, Form1.dirout)
             if Form1.Dist==True:
               dist_edge_Single(Form1.mapa_entrada)
+            
           else:
                       
             if Form1.prepareBIODIM:
@@ -994,8 +1087,11 @@ class Form1(wx.Panel):
             else:
               Form1.ListMapsGroupCalc=grass.mlist_grouped ('rast', pattern=Form1.RegularExp) ['PERMANENT']   
               
+            if Form1.Habmat: ############ adicionei isso aqui: talvez temos que aplicar as outras funcoes ja nesse mapa?
+              ###### as outras funcoes precisam de um mapa binario de entrada? ou pode ser so um mapa habitat/null?
+              create_habmat(Form1.ListMapsGroupCalc)            
             if Form1.Patch==True:
-              Form1.ListmapsPatch=Patch(Form1.ListMapsGroupCalc)
+              Form1.ListmapsPatch=Patch(Form1.ListMapsGroupCalc) ####### john precisa atribuir isso aqui?
             if Form1.Frag==True:
               areaFrag(Form1.ListMapsGroupCalc)
             if Form1.Cone==True:
@@ -1035,7 +1131,7 @@ class Form1(wx.Panel):
                 Form1.contBG=0      
                 self.Refresh() 
               #______________________________________________________________________________________________________________ 
-        if event.GetId()==11:
+        if event.GetId()==11:   # 11 = TXT RULES file
           if Form1.chebin==True:
             if  Form1.formcalculate=="Single":
               createBinarios_single(Form1.mapa_entrada)
