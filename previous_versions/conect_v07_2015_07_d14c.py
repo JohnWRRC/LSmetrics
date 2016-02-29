@@ -44,11 +44,12 @@ def createtxtED(mapa,dirs):
           ha=f[1]
           ha=float(ha)
           haint=float(ha)
+         
           haint=haint/10000+1
           ##print haint
           
           ##print haint
-          
+          haint=round(haint,2)
           txtreclass.write(`ids`+','+`haint`+'\n')
   txtreclass.close()
 
@@ -146,16 +147,21 @@ def escala_con(mapa,esc):
     escfina1=(esc)/res3
     escfina1=escfina1/2
     escfinaMeters=(esc)/res3
-    escfina1=int(round(escfina1, ndigits=0))  
-    if escfina1%2==0:
-      escfina1=int(escfina1)
-      escfina1=escfina1+1
+    escfina1=int(round(escfina1, ndigits=0))
+    if escfina1<3:
+      escfina1=3
       listasizefinal.append(escfina1)
       listametersfinal.append(esc)
-    else:
-      escfina1=int(round(escfina1, ndigits=0))
-      listasizefinal.append(escfina1)
-      listametersfinal.append(esc)      
+    else:  
+      if escfina1%2==0:
+        escfina1=int(escfina1)
+        escfina1=escfina1+1
+        listasizefinal.append(escfina1)
+        listametersfinal.append(esc)
+      else:
+        escfina1=int(round(escfina1, ndigits=0))
+        listasizefinal.append(escfina1)
+        listametersfinal.append(esc)      
   return listasizefinal,listametersfinal
   
   
@@ -174,15 +180,26 @@ def escala_frag(mapa,esc):
     esc=int(i)
     escfina1=esc/res3
     escfina1=escfina1+1
+<<<<<<< HEAD
+    if escfina1<3:
+      escfina1=3
+=======
     if escfina1%2==0:
       escfina1=int(escfina1)
       escfina1=escfina1+1
+>>>>>>> 54b41e3bcf5e143ac31dfd811569bca82573c1fe
       listasizefinal.append(escfina1)
       listametersfinal.append(esc)
     else:
-      escfina1=int(round(escfina1, ndigits=0))
-      listasizefinal.append(escfina1)
-      listametersfinal.append(esc)      
+      if escfina1%2==0:
+        escfina1=int(escfina1)
+        escfina1=escfina1+1
+        listasizefinal.append(escfina1)
+        listametersfinal.append(esc)
+      else:
+        escfina1=int(round(escfina1, ndigits=0))
+        listasizefinal.append(escfina1)
+        listametersfinal.append(esc)      
   return listasizefinal,listametersfinal
 
 
