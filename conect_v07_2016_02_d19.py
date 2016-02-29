@@ -30,8 +30,7 @@ import random
 import numpy as np
 import re
 import math
-import win32gui
-from win32com.shell import shell, shellcon
+
 
 ID_ABOUT=101
 ID_IBMCFG=102
@@ -106,27 +105,15 @@ def createtxt(mapa, dirs, outname=False):
 # Auxiliary functions
 
 def selecdirectori():
-  """
-  This function opens a window for the user to select a folder or file
-  """
-  mydocs_pidl = shell.SHGetFolderLocation (0, shellcon.CSIDL_DESKTOP, 0, 0)
-  pidl, display_name, image_list = shell.SHBrowseForFolder (
-    win32gui.GetDesktopWindow (),
-    mydocs_pidl,
-    "Select a file or folder",
-    shellcon.BIF_BROWSEINCLUDEFILES,
-    None,
-    None
-  )
+  dialog = wx.DirDialog(None, "Select the output folder:",style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+  if dialog.ShowModal() == wx.ID_OK:
+    #print ">>..................",dialog.GetPath()
+    return dialog.GetPath()
   
-  if (pidl, display_name, image_list) == (None, None, None):
-    print "Nothing selected"
-  else:
-    path = shell.SHGetPathFromIDList (pidl)
-    #print "Opening", #path
-    a=(path)
+
   
-  return a
+  
+  
 
 def createBinarios_single(ListMapBins):
   """
@@ -185,7 +172,7 @@ def create_habmat_single(ListMapBins):
     expression = ListMapBins+'_HABMAT=if('+conditional+', 1, 0)'
     grass.run_command('g.region', rast=ListMapBins)
     grass.mapcalc(expression, overwrite = True, quiet = True)
-    grass.run_command('r.null', map=ListMapBins+'_HABMAT', null='0') # precisa disso?? 
+    grass.run_command('r.null', map=ListMapBins+'_HABMAT', null='0') # precisa disso??, nao sei .rsrs 
   else:
     print 'You did not type which class is habitat!! Map not generated' # organizar para dar um erro; pode ser com try except 
     
