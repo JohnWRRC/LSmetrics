@@ -768,7 +768,7 @@ def create_EDGE(ListmapsED, escale_ed, dirs):
       
       if Form1.removeTrash:
         
-        grass.run_command('g.remove',type="raster",name=i+"_eroED_"+`apoioname`+'m,'+i+'_EDGE'+`apoioname`+'m_temp1,'+i+'_EDGE'+`apoioname`+'m_temp2')
+        grass.run_command('g.remove',type="raster",name=i+"_eroED_"+`apoioname`+'m,'+i+'_EDGE'+`apoioname`+'m_temp1,'+i+'_EDGE'+`apoioname`+'m_temp2',flags="f")
       
       x=x+1
       
