@@ -109,11 +109,7 @@ def selecdirectori():
   if dialog.ShowModal() == wx.ID_OK:
     #print ">>..................",dialog.GetPath()
     return dialog.GetPath()
-  
 
-  
-  
-  
 
 def createBinarios_single(ListMapBins):
   """
@@ -145,12 +141,14 @@ def createBinarios(ListMapBins):
       Form1.speciesList=grass.list_grouped ('rast', pattern='(*)') ['PERMANENT']    
     return readtxt
   
-def create_habmat_single(ListMapBins):
+def create_habmat_single(ListMapBins_in, prefix = ''):
   """
   Function for a single map
   This function reclassify an input map into a binary map, according to reclassification rules passed by
   a text file
   """
+
+  ListMapBins = prefix+'_'+ListMapBins_in
   
   # opcao 1: ler um arquivo e fazer reclass
   # TEMOS QUE ORGANIZAR ISSO AINDA!!
@@ -166,11 +164,11 @@ def create_habmat_single(ListMapBins):
     for j in Form1.list_habitat_classes:
       if cc > 0:
         conditional = conditional+' || '
-      conditional = conditional+ListMapBins+' == '+j
+      conditional = conditional+ListMapBins_in+' == '+j
       cc += 1
       
-    expression = ListMapBins+'_HABMAT=if('+conditional+', 1, 0)'
-    grass.run_command('g.region', rast=ListMapBins)
+    expression = ListMapBins+'_HABMAT = if('+conditional+', 1, 0)'
+    grass.run_command('g.region', rast=ListMapBins_in)
     grass.mapcalc(expression, overwrite = True, quiet = True)
     grass.run_command('r.null', map=ListMapBins+'_HABMAT', null='0') # precisa disso??, nao sei .rsrs 
   else:
@@ -186,7 +184,7 @@ def create_habmat_single(ListMapBins):
     createtxt(ListMapBins+'_HABMAT', Form1.dirout, ListMapBins+'_HABMAT')
 
 
-def create_habmat(ListMapBins):
+def create_habmat(ListMapBins, prefix = ''):
   """
   Function for a series of maps
   This function reclassify an input map into a binary map, according to reclassification rules passed by
@@ -203,7 +201,17 @@ def create_habmat(ListMapBins):
   #grass.run_command('r.reclass',input=ListMapBins,output=ListMapBins+'_HABMAT',rules=readtxt, overwrite = True)
   
   # opcao 2: definir quais classes sao habitat; todas as outras serao matriz
-  for i in ListMapBins:
+  cont = 1
+  for i_in in ListMapBins:
+    
+    if cont <= 9:
+      pre_numb = "000"+`cont`
+    elif cont <= 99:
+      pre_numb = "00"+`cont`
+    elif cont <= 999:        
+      pre_numb = "0"+`cont`
+    else: 
+      pre_numb = `cont`    
     
     if(len(Form1.list_habitat_classes) > 0):
       conditional = ''
@@ -211,11 +219,13 @@ def create_habmat(ListMapBins):
       for j in Form1.list_habitat_classes:
         if cc > 0:
           conditional = conditional+' || '
-        conditional = conditional+i+' == '+j
+        conditional = conditional+i_in+' == '+j
         cc += 1
       
-      expression = i+'_HABMAT=if('+conditional+', 1, 0)'
-      grass.run_command('g.region', rast=i)
+      i = prefix+pre_numb+'_'+i_in
+      
+      expression = i+'_HABMAT = if('+conditional+', 1, 0)'
+      grass.run_command('g.region', rast=i_in)
       grass.mapcalc(expression, overwrite = True, quiet = True)
       grass.run_command('r.null', map=i+'_HABMAT', null='0') # precisa disso?? 
     else:
@@ -229,6 +239,8 @@ def create_habmat(ListMapBins):
   
     if Form1.calcStatistics:
       createtxt(i+'_HABMAT', Form1.dirout, i+'_HABMAT')
+      
+    cont += 1
       
   if Form1.prepareBIODIM:
     create_TXTinputBIODIM(lista_maps_habmat, "simulados_HABMAT", Form1.dirout)  
@@ -293,7 +305,7 @@ def escala_con(mapa,esc):
   ############# EH ISSO?
   """
   esclist=esc.split(',')
-  res=grass.read_command('g.region',rast=mapa,flags='m')
+  res=grass.read_command('g.region', rast=mapa, flags='m')
   res2=res.split('\n')
   res3=res2[5]
   res3=float(res3.replace('ewres=',''))
@@ -323,7 +335,7 @@ def escala_frag(mapa,esc):
   ############# EH ISSO?
   """
   esclist=esc.split(',')
-  res=grass.read_command('g.region',rast=mapa,flags='m')
+  res=grass.read_command('g.region', rast=mapa, flags='m')
   res2=res.split('\n')
   res3=res2[5]
   res3=float(res3.replace('ewres=',''))
@@ -348,25 +360,28 @@ def escala_frag(mapa,esc):
 #----------------------------------------------------------------------------------
 # Metrics for fragmented (excluding edges/corridors) views of landscapes (FRAG)
 
-def areaFragSingle(ListmapsFrag):
+def areaFragSingle(ListmapsFrag_in, prefix = ''):
   """
   Function for a single map
   This function fragments patches (FRAG), excluding corridors and edges given input scales (distances), and:
   - generates and exports maps with Patch ID and Area of each "fragmented" patch
   - generatics statistics - Area per patch (if Form1.calcStatistics == True)
   """
-  grass.run_command('g.region', rast=ListmapsFrag)
-  Lista_escalafragM, listmeters=escala_frag(ListmapsFrag, Form1.escala_frag_con)
+  
+  ListmapsFrag = prefix+'_'+ListmapsFrag_in
+  
+  grass.run_command('g.region', rast=ListmapsFrag_in)
+  Lista_escalafragM, listmeters = escala_frag(ListmapsFrag_in, Form1.escala_frag_con)
 
   x=0
   for a in Lista_escalafragM:
     meters=int(listmeters[x])  
     #print escalafragM
-    grass.run_command('r.neighbors', input=ListmapsFrag,output=ListmapsFrag+"_ero_"+`meters`+'m', method='minimum', size=a, overwrite = True)
+    grass.run_command('r.neighbors', input=ListmapsFrag_in, output=ListmapsFrag+"_ero_"+`meters`+'m', method='minimum', size=a, overwrite = True)
     grass.run_command('r.neighbors', input=ListmapsFrag+"_ero_"+`meters`+'m', output=ListmapsFrag+"_dila_"+`meters`+'m', method='maximum', size=a, overwrite = True)
-    expressao1=ListmapsFrag+"_FRAG"+`meters`+"m_mata=if("+ListmapsFrag+"_dila_"+`meters`+'m'+">0,"+ListmapsFrag+"_dila_"+`meters`+'m'+",null())"
+    expressao1=ListmapsFrag+"_FRAG"+`meters`+"m_mata = if("+ListmapsFrag+"_dila_"+`meters`+'m'+" > 0, "+ListmapsFrag+"_dila_"+`meters`+'m'+", null())"
     grass.mapcalc(expressao1, overwrite = True, quiet = True)
-    expressao2=ListmapsFrag+"_FRAG"+`meters`+"m_mata_lpo=if("+ListmapsFrag+">=0,"+ListmapsFrag+"_FRAG"+`meters`+"m_mata,null())"
+    expressao2=ListmapsFrag+"_FRAG"+`meters`+"m_mata_lpo = if("+ListmapsFrag_in+" >= 0, "+ListmapsFrag+"_FRAG"+`meters`+"m_mata, null())"
     grass.mapcalc(expressao2, overwrite = True, quiet = True)
     grass.run_command('r.clump', input=ListmapsFrag+"_FRAG"+`meters`+"m_mata_lpo", output=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid", overwrite = True)
     
@@ -392,10 +407,10 @@ def areaFragSingle(ListmapsFrag):
       else:
         txts = [ListmapsFrag+"_ero_"+`meters`+'m', ListmapsFrag+"_dila_"+`meters`+'m', ListmapsFrag+"_FRAG"+`meters`+"m_mata", ListmapsFrag+"_FRAG"+`meters`+"m_mata_lpo"] #, ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid"]
       for txt in txts:
-        grass.run_command('g.remove',type="raster",name=txt, flags='f')
+        grass.run_command('g.remove', type="raster", name=txt, flags='f')
     x=x+1     
 
-def areaFrag(ListmapsFrag):
+def areaFrag(ListmapsFrag, prefix = ''):
   """
   Function for a series of maps
   This function fragments patches (FRAG), excluding corridors and edges given input scales (distances), and:
@@ -409,9 +424,22 @@ def areaFrag(ListmapsFrag):
     lista_maps_area = np.empty((len(ListmapsFrag), len(esc)), dtype=np.dtype('a200'))
   
   z = 0
-  for i in ListmapsFrag:
-    grass.run_command('g.region', rast=i)
-    Lista_escalafragM, listmeters=escala_frag(i, Form1.escala_frag_con)
+  cont = 1
+  for i_in in ListmapsFrag:
+    
+    if cont <= 9:
+      pre_numb = "000"+`cont`
+    elif cont <= 99:
+      pre_numb = "00"+`cont`
+    elif cont <= 999:        
+      pre_numb = "0"+`cont`
+    else: 
+      pre_numb = `cont`
+      
+    i = prefix+pre_numb+'_'+i_in
+          
+    grass.run_command('g.region', rast=i_in)
+    Lista_escalafragM, listmeters = escala_frag(i_in, Form1.escala_frag_con)
     #print escalafragM
     x=0
     #lista_maps_pid=[]
@@ -419,11 +447,11 @@ def areaFrag(ListmapsFrag):
     for a in Lista_escalafragM:
       meters=int(listmeters[x])
       #print a
-      grass.run_command('r.neighbors', input=i, output=i+"_ero_"+`meters`+'m', method='minimum', size=a, overwrite = True)
+      grass.run_command('r.neighbors', input=i_in, output=i+"_ero_"+`meters`+'m', method='minimum', size=a, overwrite = True)
       grass.run_command('r.neighbors', input=i+"_ero_"+`meters`+'m', output=i+"_dila_"+`meters`+'m', method='maximum', size=a, overwrite = True)
       expressao1=i+"_FRAG"+`meters`+"m_mata = if("+i+"_dila_"+`meters`+'m'+">0,"+i+"_dila_"+`meters`+'m'+",null())"
       grass.mapcalc(expressao1, overwrite = True, quiet = True)
-      expressao2=i+"_FRAG"+`meters`+"m_mata_lpo = if("+i+">=0,"+i+"_FRAG"+`meters`+"m_mata,null())"
+      expressao2=i+"_FRAG"+`meters`+"m_mata_lpo = if("+i_in+" >= 0, "+i+"_FRAG"+`meters`+"m_mata, null())"
       grass.mapcalc(expressao2, overwrite = True, quiet = True)      
       grass.run_command('r.clump', input=i+"_FRAG"+`meters`+"m_mata_lpo", output=i+"_FRAG"+`meters`+"m_mata_clump_pid", overwrite = True)
       grass.run_command('g.region', rast=i+"_FRAG"+`meters`+"m_mata_clump_pid")
@@ -438,8 +466,8 @@ def areaFrag(ListmapsFrag):
         #lista_maps_pid.append(i+"_FRAG"+`meters`+"m_mata_clump_pid")
         #lista_maps_area.append(i+"_FRAG"+`meters`+"m_mata_clump_AreaHA")
       else:
-        grass.run_command('g.region',rast=i+"_FRAG"+`meters`+"m_mata_clump_AreaHA")
-        grass.run_command('r.out.gdal',input=i+"_FRAG"+`meters`+"m_mata_clump_AreaHA",out=i+"_FRAG"+`meters`+"m_AreaHA.tif",overwrite = True)        
+        grass.run_command('g.region', rast=i+"_FRAG"+`meters`+"m_mata_clump_AreaHA")
+        grass.run_command('r.out.gdal', input=i+"_FRAG"+`meters`+"m_mata_clump_AreaHA", out=i+"_FRAG"+`meters`+"m_AreaHA.tif", overwrite = True)        
       
       if Form1.calcStatistics:      
         createtxt(i+"_FRAG"+`meters`+"m_mata_clump_pid", Form1.dirout, i+"_FRAG"+`meters`+"m_AreaHA")      
@@ -450,9 +478,10 @@ def areaFrag(ListmapsFrag):
         else:        
           txts = [i+"_ero_"+`meters`+'m', i+"_dila_"+`meters`+'m', i+"_FRAG"+`meters`+"m_mata", i+"_FRAG"+`meters`+"m_mata_lpo"] #, i+"_FRAG"+`meters`+"m_mata_clump_pid"]
         for txt in txts:
-          grass.run_command('g.remove',type="raster",name=txt, flags='f')
+          grass.run_command('g.remove', type="raster", name=txt, flags='f')
       x=x+1
-    z=z+1 
+    z=z+1
+    cont += 1
   
   if Form1.prepareBIODIM:
     for i in range(len(met)):
@@ -464,7 +493,7 @@ def areaFrag(ListmapsFrag):
 #----------------------------------------------------------------------------------
 # Metrics for patch size/area/ID (PATCH)
 
-def patchSingle(Listmapspatch):
+def patchSingle(Listmapspatch_in, prefix = ''):
   """
   Function for a single map
   This function calculates area per patch in a map (PATCH), considering structural connectivity 
@@ -473,12 +502,14 @@ def patchSingle(Listmapspatch):
   - generatics statistics - Area per patch (if Form1.calcStatistics == True)
   """
   
-  grass.run_command('g.region', rast=Listmapspatch)
-  grass.run_command('r.clump', input=Listmapspatch, output=Listmapspatch+"_patch_clump", overwrite = True)
+  Listmapspatch = prefix+'_'+Listmapspatch_in
+  
+  grass.run_command('g.region', rast=Listmapspatch_in)
+  grass.run_command('r.clump', input=Listmapspatch_in, output=Listmapspatch+"_patch_clump", overwrite = True)
   ########## essa proxima linha muda algo?? clump * mata/nao-mata  
-  expression12=Listmapspatch+"_patch_clump_mata = "+Listmapspatch+"_patch_clump*"+Listmapspatch
+  expression12=Listmapspatch+"_patch_clump_mata = "+Listmapspatch+"_patch_clump*"+Listmapspatch_in
   grass.mapcalc(expression12, overwrite = True, quiet = True)
-  expression13=Listmapspatch+"_patch_clump_mata_limpa_pid = if("+Listmapspatch+"_patch_clump_mata>0,"+Listmapspatch+"_patch_clump_mata,null())"
+  expression13=Listmapspatch+"_patch_clump_mata_limpa_pid = if("+Listmapspatch+"_patch_clump_mata > 0, "+Listmapspatch+"_patch_clump_mata, null())"
   grass.mapcalc(expression13, overwrite = True, quiet = True)
   
   nametxtreclass=rulesreclass(Listmapspatch+"_patch_clump_mata_limpa_pid", Form1.dirout)
@@ -502,9 +533,9 @@ def patchSingle(Listmapspatch):
     else:
       txts = [Listmapspatch+"_patch_clump", Listmapspatch+"_patch_clump_mata"] #, Listmapspatch+"_patch_clump_mata_limpa_pid"]
     for txt in txts:
-      grass.run_command('g.remove',type="raster",name=txt, flags='f')
+      grass.run_command('g.remove', type="raster", name=txt, flags='f')
   
-def Patch(Listmapspatch):
+def Patch(Listmapspatch, prefix = ''):
   """
   Function for a series of maps
   This function calculates area per patch in a map (PATCH), considering structural connectivity 
@@ -517,12 +548,25 @@ def Patch(Listmapspatch):
     lista_maps_pid=[]
     lista_maps_area=[]  
 
-  for i in Listmapspatch:
-    grass.run_command('g.region', rast=i)
-    grass.run_command('r.clump', input=i, output=i+"_patch_clump", overwrite = True)
-    expression12=i+"_patch_clump_mata = "+i+"_patch_clump*"+i
+  cont = 1
+  for i_in in Listmapspatch:
+    
+    if cont <= 9:
+      pre_numb = "000"+`cont`
+    elif cont <= 99:
+      pre_numb = "00"+`cont`
+    elif cont <= 999:        
+      pre_numb = "0"+`cont`
+    else: 
+      pre_numb = `cont`
+      
+    i = prefix+pre_numb+'_'+i_in
+
+    grass.run_command('g.region', rast=i_in)
+    grass.run_command('r.clump', input=i_in, output=i+"_patch_clump", overwrite = True)
+    expression12=i+"_patch_clump_mata = "+i+"_patch_clump*"+i_in
     grass.mapcalc(expression12, overwrite = True, quiet = True)
-    expression13=i+"_patch_clump_mata_limpa_pid = if("+i+"_patch_clump_mata>0,"+i+"_patch_clump_mata,null())"
+    expression13=i+"_patch_clump_mata_limpa_pid = if("+i+"_patch_clump_mata > 0, "+i+"_patch_clump_mata, null())"
     grass.mapcalc(expression13, overwrite = True, quiet = True)
     
     nametxtreclass=rulesreclass(i+"_patch_clump_mata_limpa_pid", Form1.dirout)
@@ -546,7 +590,9 @@ def Patch(Listmapspatch):
       else:
         txts = [i+"_patch_clump", i+"_patch_clump_mata"]#, i+"_patch_clump_mata_limpa_pid"]
       for txt in txts:
-        grass.run_command('g.remove',type="raster",name=txt, flags='f')
+        grass.run_command('g.remove', type="raster", name=txt, flags='f')
+        
+    cont += 1
         
     
   if Form1.prepareBIODIM:
@@ -558,7 +604,7 @@ def Patch(Listmapspatch):
 #----------------------------------------------------------------------------------
 # Metrics for functional connectivity area/ID (CON)
 
-def areaconSingle(Listmapspatch):
+def areaconSingle(Listmapspatch_in, prefix = ''):
   """
   Function for a single map
   This function calculates functional patch area in a map (CON), considering functional connectivity 
@@ -566,18 +612,22 @@ def areaconSingle(Listmapspatch):
   - generates and exports maps with Patch ID and Area of each patch
   - generatics statistics - Area per patch (if Form1.calcStatistics == True)
   """
+  
+  Listmapspatch = prefix+'_'+Listmapspatch_in
 
-  grass.run_command('g.region', rast=Listmapspatch)
-  listescalafconM, listmeters = escala_con(Listmapspatch, Form1.escala_frag_con)
+  grass.run_command('g.region', rast=Listmapspatch_in)
+  listescalafconM, listmeters = escala_con(Listmapspatch_in, Form1.escala_frag_con)
   
   x=0
   for a in listescalafconM:
     meters = int(listmeters[x])
-    grass.run_command('r.neighbors', input=Listmapspatch, output=Listmapspatch+"_dila_"+`meters`+'m_orig', method='maximum', size=a, overwrite = True)
-    grass.run_command('r.clump', input=Listmapspatch+"_dila_"+`meters`+'m_orig', output=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid', overwrite = True)
-    espressao1=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata = '+Listmapspatch+'*'+Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid'
+    grass.run_command('r.neighbors', input=Listmapspatch_in, output=Listmapspatch+"_dila_"+`meters`+'m_orig', method='maximum', size=a, overwrite = True)
+    expression=Listmapspatch+"_dila_"+`meters`+'m_orig_temp = if('+Listmapspatch+"_dila_"+`meters`+'m_orig == 0, null(), '+Listmapspatch+"_dila_"+`meters`+'m_orig)'
+    grass.mapcalc(expression, overwrite = True, quiet = True)
+    grass.run_command('r.clump', input=Listmapspatch+"_dila_"+`meters`+'m_orig_temp', output=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid', overwrite = True)
+    espressao1=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata = '+Listmapspatch_in+'*'+Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid'
     grass.mapcalc(espressao1, overwrite = True, quiet = True)
-    espressao2=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid = if('+Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata>0,'+Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata,null())'
+    espressao2=Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid = if('+Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata > 0, '+Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata, null())'
     grass.mapcalc(espressao2, overwrite = True, quiet = True)
     
     nametxtreclass=rulesreclass(Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid', Form1.dirout)
@@ -607,17 +657,15 @@ def areaconSingle(Listmapspatch):
       
     if Form1.removeTrash:
       if Form1.prepareBIODIM:
-        txts = [Listmapspatch+"_dila_"+`meters`+'m_orig', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata']
+        txts = [Listmapspatch+"_dila_"+`meters`+'m_orig', Listmapspatch+"_dila_"+`meters`+'m_orig_temp', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata']
       else:
-        txts = [Listmapspatch+"_dila_"+`meters`+'m_orig', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata']
-        #txts = [Listmapspatch+"_dila_"+`meters`+'m_orig', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid']
+        txts = [Listmapspatch+"_dila_"+`meters`+'m_orig', Listmapspatch+"_dila_"+`meters`+'m_orig_temp', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_pid', Listmapspatch+"_dila_"+`meters`+'m_orig_clump_mata']
       for txt in txts:
-        
-        grass.run_command('g.remove',type="raster",name=txt, flags='f')
+        grass.run_command('g.remove', type="raster", name=txt, flags='f')
            
     x=x+1
 
-def areacon(Listmapspatch):
+def areacon(Listmapspatch, prefix = ''):
   """
   Function for a series of maps
   This function calculates functional patch area in a map (CON), considering functional connectivity 
@@ -636,18 +684,33 @@ def areacon(Listmapspatch):
     lista_maps_area_comp = np.empty((len(Listmapspatch), len(esc)), dtype=np.dtype('a200'))        
   
   z = 0
-  for i in Listmapspatch:
-    grass.run_command('g.region', rast=i)
-    listescalafconM, listmeters = escala_con(i, Form1.escala_frag_con)
+  cont = 1
+  for i_in in Listmapspatch:
+    
+    if cont <= 9:
+      pre_numb = "000"+`cont`
+    elif cont <= 99:
+      pre_numb = "00"+`cont`
+    elif cont <= 999:        
+      pre_numb = "0"+`cont`
+    else: 
+      pre_numb = `cont`
+      
+    i = prefix+pre_numb+'_'+i_in
+    
+    grass.run_command('g.region', rast=i_in)
+    listescalafconM, listmeters = escala_con(i_in, Form1.escala_frag_con)
     
     x = 0
     for a in listescalafconM:
       meters = int(listmeters[x])    
-      grass.run_command('r.neighbors', input=i, output=i+"_dila_"+`meters`+'m_orig', method='maximum', size=a, overwrite = True)
-      grass.run_command('r.clump', input=i+"_dila_"+`meters`+'m_orig', output=i+"_dila_"+`meters`+'m_orig_clump_pid', overwrite = True)
-      espressao1=i+"_dila_"+`meters`+'m_orig_clump_mata = '+i+'*'+i+"_dila_"+`meters`+'m_orig_clump_pid'
+      grass.run_command('r.neighbors', input=i_in, output=i+"_dila_"+`meters`+'m_orig', method='maximum', size=a, overwrite = True)
+      expression=i+"_dila_"+`meters`+'m_orig_temp = if('+i+"_dila_"+`meters`+'m_orig == 0, null(), '+i+"_dila_"+`meters`+'m_orig)'
+      grass.mapcalc(expression, overwrite = True, quiet = True)      
+      grass.run_command('r.clump', input=i+"_dila_"+`meters`+'m_orig_temp', output=i+"_dila_"+`meters`+'m_orig_clump_pid', overwrite = True)
+      espressao1=i+"_dila_"+`meters`+'m_orig_clump_mata = '+i_in+'*'+i+"_dila_"+`meters`+'m_orig_clump_pid'
       grass.mapcalc(espressao1, overwrite = True, quiet = True)
-      espressao2=i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid = if('+i+"_dila_"+`meters`+'m_orig_clump_mata>0,'+i+"_dila_"+`meters`+'m_orig_clump_mata,null())'
+      espressao2=i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid = if('+i+"_dila_"+`meters`+'m_orig_clump_mata > 0, '+i+"_dila_"+`meters`+'m_orig_clump_mata, null())'
       grass.mapcalc(espressao2, overwrite = True, quiet = True)
       nametxtreclass=rulesreclass(i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid', Form1.dirout)
       grass.run_command('r.reclass', input=i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid', output=i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_AreaHA', rules=nametxtreclass, overwrite = True)
@@ -679,14 +742,15 @@ def areacon(Listmapspatch):
       
       if Form1.removeTrash:
         if Form1.prepareBIODIM:
-          txts = [i+"_dila_"+`meters`+'m_orig', i+"_dila_"+`meters`+'m_orig_clump_mata']
+          txts = [i+"_dila_"+`meters`+'m_orig', i+"_dila_"+`meters`+'m_orig_temp', i+"_dila_"+`meters`+'m_orig_clump_mata']
         else:
-          txts = [i+"_dila_"+`meters`+'m_orig', i+"_dila_"+`meters`+'m_orig_clump_pid', i+"_dila_"+`meters`+'m_orig_clump_mata'] #, i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid']
+          txts = [i+"_dila_"+`meters`+'m_orig', i+"_dila_"+`meters`+'m_orig_temp', i+"_dila_"+`meters`+'m_orig_clump_pid', i+"_dila_"+`meters`+'m_orig_clump_mata'] #, i+"_dila_"+`meters`+'m_orig_clump_mata_limpa_pid']
         for txt in txts:
-          grass.run_command('g.remove',type='raster',name=txt, flags='f')
+          grass.run_command('g.remove', type='raster', name=txt, flags='f')
           
       x=x+1
     z=z+1
+    cont += 1
     
   if Form1.prepareBIODIM:
     for i in range(len(met)):
@@ -704,41 +768,43 @@ def areacon(Listmapspatch):
 def mapcalcED(expressao):
   grass.mapcalc(expressao, overwrite = True, quiet = True)        
 
-def create_EDGE_single(ListmapsED, escale_ed, dirs):
+def create_EDGE_single(ListmapsED_in, escale_ed, dirs, prefix = ''):
   """
   Function for a single map
   This function separates habitat area into edge and interior/core regions, given a scale/distance defined as edge, and:
   - generates and exports maps with each region
   - generatics statistics - Area per region (matrix/edge/core) (if Form1.calcStatistics == True)
   """  
-  grass.run_command('g.region', rast=ListmapsED)
-  listsize, listapoioname = escala_frag(ListmapsED, escale_ed)
+  
+  ListmapsED = prefix+'_'+ListmapsED_in
+  
+  grass.run_command('g.region', rast=ListmapsED_in)
+  listsize, listapoioname = escala_frag(ListmapsED_in, escale_ed)
   
   x=0
   for i in listsize:
     apoioname = int(listapoioname[x])  
-    grass.run_command('r.neighbors', input=ListmapsED, output=ListmapsED+"_eroED_"+`apoioname`+'m', method='minimum', size=i, overwrite = True)
-    inputs=ListmapsED+"_eroED_"+`apoioname`+'m,'+ListmapsED
+    grass.run_command('r.neighbors', input=ListmapsED_in, output=ListmapsED+"_eroED_"+`apoioname`+'m', method='minimum', size=i, overwrite = True)
+    inputs=ListmapsED+"_eroED_"+`apoioname`+'m,'+ListmapsED_in
     out=ListmapsED+'_EDGE'+`apoioname`+'m_temp1'
     grass.run_command('r.series', input=inputs, out=out, method='sum', overwrite = True)
     espressaoEd=ListmapsED+'_EDGE'+`apoioname`+'m_temp2 = int('+ListmapsED+'_EDGE'+`apoioname`+'m_temp1)'
     mapcalcED(espressaoEd)
-    espressaoclip=ListmapsED+'_EDGE'+`apoioname`+'m= if('+ListmapsED+'>=0,'+ListmapsED+'_EDGE'+`apoioname`+'m_temp2,null())'
+    espressaoclip=ListmapsED+'_EDGE'+`apoioname`+'m= if('+ListmapsED_in+' >= 0, '+ListmapsED+'_EDGE'+`apoioname`+'m_temp2, null())'
     mapcalcED(espressaoclip)    
      
-    grass.run_command('r.out.gdal', input=ListmapsED+'_EDGE'+`apoioname`+'m', out=ListmapsED+'_EDGE'+`apoioname`+'m.tif',overwrite = True) 
+    grass.run_command('r.out.gdal', input=ListmapsED+'_EDGE'+`apoioname`+'m', out=ListmapsED+'_EDGE'+`apoioname`+'m.tif', overwrite = True) 
     
     if Form1.calcStatistics:
       createtxt(ListmapsED+'_EDGE'+`apoioname`+'m', dirs, out)
       
     if Form1.removeTrash:
-      
-      grass.run_command('g.remove',type="raster",name=ListmapsED+"_eroED_"+`apoioname`+'m,'+ListmapsED+'_EDGE'+`apoioname`+'m_temp1,'+ListmapsED+'_EDGE'+`apoioname`+'m_temp2', flags='f')
+      grass.run_command('g.remove', type="raster", name=ListmapsED+"_eroED_"+`apoioname`+'m,'+ListmapsED+'_EDGE'+`apoioname`+'m_temp1,'+ListmapsED+'_EDGE'+`apoioname`+'m_temp2', flags='f')
     
     x=x+1
     
     
-def create_EDGE(ListmapsED, escale_ed, dirs):
+def create_EDGE(ListmapsED, escale_ed, dirs, prefix = ''):
   """
   Function for a series of maps
   This function separates habitat area into edge and interior/core regions, given a scale/distance defined as edge, and:
@@ -746,49 +812,65 @@ def create_EDGE(ListmapsED, escale_ed, dirs):
   - generatics statistics - Area per region (matrix/edge/core) (if Form1.calcStatistics == True)
   """
   
-  for i in ListmapsED:
-    grass.run_command('g.region', rast=i)
-    listsize, listapoioname = escala_frag(i, escale_ed)
+  cont = 1
+  for i_in in ListmapsED:
+    
+    if cont <= 9:
+      pre_numb = "000"+`cont`
+    elif cont <= 99:
+      pre_numb = "00"+`cont`
+    elif cont <= 999:        
+      pre_numb = "0"+`cont`
+    else: 
+      pre_numb = `cont`    
+    
+    i = prefix+pre_numb+'_'+i_in
+    
+    grass.run_command('g.region', rast=i_in)
+    listsize, listapoioname = escala_frag(i_in, escale_ed)
     
     x=0
     for a in listsize:
       apoioname = int(listapoioname[x])
-      grass.run_command('r.neighbors', input=i, output=i+"_eroED_"+`apoioname`+'m', method='minimum', size=a, overwrite = True)
-      inputs=i+"_eroED_"+`apoioname`+'m,'+i
+      grass.run_command('r.neighbors', input=i_in, output=i+"_eroED_"+`apoioname`+'m', method='minimum', size=a, overwrite = True)
+      inputs=i+"_eroED_"+`apoioname`+'m,'+i_in
       out=i+'_EDGE'+`apoioname`+'m_temp1'
       grass.run_command('r.series', input=inputs, out=out, method='sum', overwrite = True)
       espressaoEd=i+'_EDGE'+`apoioname`+'m_temp2= int('+i+'_EDGE'+`apoioname`+'m_temp1)'
       mapcalcED(espressaoEd)
-      espressaoclip=i+'_EDGE'+`apoioname`+'m = if('+i+'>=0,'+i+'_EDGE'+`apoioname`+'m_temp2,null())'
+      espressaoclip=i+'_EDGE'+`apoioname`+'m = if('+i_in+' >= 0, '+i+'_EDGE'+`apoioname`+'m_temp2, null())'
       mapcalcED(espressaoclip)
-      grass.run_command('r.out.gdal', input=i+'_EDGE'+`apoioname`+'m', out=i+'_EDGE'+`apoioname`+'m.tif',overwrite = True)     
+      grass.run_command('r.out.gdal', input=i+'_EDGE'+`apoioname`+'m', out=i+'_EDGE'+`apoioname`+'m.tif', overwrite = True)     
       
       if Form1.calcStatistics:
         createtxt(i+'_EDGE'+`apoioname`+'m', dirs, i+'_EDGE'+`apoioname`+'m_temp1')
       
       if Form1.removeTrash:
-        
-        grass.run_command('g.remove',type="raster",name=i+"_eroED_"+`apoioname`+'m,'+i+'_EDGE'+`apoioname`+'m_temp1,'+i+'_EDGE'+`apoioname`+'m_temp2',flags="f")
+        grass.run_command('g.remove', type="raster", name=i+"_eroED_"+`apoioname`+'m,'+i+'_EDGE'+`apoioname`+'m_temp1,'+i+'_EDGE'+`apoioname`+'m_temp2', flags="f")
       
       x=x+1
+      
+    cont += 1
       
 
 #----------------------------------------------------------------------------------
 # Metrics for distance to edges
     
-def dist_edge_Single(Listmapsdist):
+def dist_edge_Single(Listmapsdist_in, prefix = ''):
   """
   Function for a single map
   This function calculates the distance of each pixel to habitat edges, considering
   negative values (inside patches) and positive values (into the matrix). Also:
   - generates and exports maps of distance to edge (DIST)
   """
+
+  Listmapsdist = prefix+'_'+Listmapsdist_in
   
-  grass.run_command('g.region', rast=Listmapsdist)
-  expression1=Listmapsdist+'_invert = if('+Listmapsdist+'==0,1,null())'
+  grass.run_command('g.region', rast=Listmapsdist_in)
+  expression1=Listmapsdist+'_invert = if('+Listmapsdist_in+' == 0, 1, null())'
   grass.mapcalc(expression1, overwrite = True, quiet = True)
   grass.run_command('r.grow.distance', input=Listmapsdist+'_invert', distance=Listmapsdist+'_invert_forest_neg_eucldist',overwrite = True)
-  expression2=Listmapsdist+'_invert_matrix = if('+Listmapsdist+'==0,null(),1)'
+  expression2=Listmapsdist+'_invert_matrix = if('+Listmapsdist_in+' == 0, null(), 1)'
   grass.mapcalc(expression2, overwrite = True, quiet = True)
   grass.run_command('r.grow.distance', input=Listmapsdist+'_invert_matrix', distance=Listmapsdist+'_invert_matrix_pos_eucldist',overwrite = True)
   expression3=Listmapsdist+'_dist = '+Listmapsdist+'_invert_matrix_pos_eucldist-'+Listmapsdist+'_invert_forest_neg_eucldist'
@@ -797,14 +879,14 @@ def dist_edge_Single(Listmapsdist):
   if Form1.prepareBIODIM:
     create_TXTinputBIODIM([Listmapsdist+'_dist'], "simulados_HABMAT_DIST", Form1.dirout)
   else:
-    grass.run_command('r.out.gdal', input=Listmapsdist+'_dist', out=Listmapsdist+'_DIST.tif',overwrite = True)
+    grass.run_command('r.out.gdal', input=Listmapsdist+'_dist', out=Listmapsdist+'_DIST.tif', overwrite = True)
     
   if Form1.removeTrash:
     txts = [Listmapsdist+'_invert', Listmapsdist+'_invert_forest_neg_eucldist', Listmapsdist+'_invert_matrix', Listmapsdist+'_invert_matrix_pos_eucldist']
     for txt in txts:
-      grass.run_command('g.remove',type="raster",name=txt, flags='f')
+      grass.run_command('g.remove', type="raster", name=txt, flags='f')
 
-def dist_edge(Listmapsdist):
+def dist_edge(Listmapsdist, prefix = ''):
   """
   Function for a series of maps
   This function calculates the distance of each pixel to habitat edges, considering
@@ -815,12 +897,25 @@ def dist_edge(Listmapsdist):
   if Form1.prepareBIODIM:
     lista_maps_dist=[]    
   
-  for i in Listmapsdist:
-    grass.run_command('g.region', rast=i)
-    expression1=i+'_invert = if('+i+'==0,1,null())'
+  cont = 1
+  for i_in in Listmapsdist:
+    
+    if cont <= 9:
+      pre_numb = "000"+`cont`
+    elif cont <= 99:
+      pre_numb = "00"+`cont`
+    elif cont <= 999:        
+      pre_numb = "0"+`cont`
+    else: 
+      pre_numb = `cont`    
+
+    i = prefix+pre_numb+'_'+i_in
+
+    grass.run_command('g.region', rast=i_in)
+    expression1=i+'_invert = if('+i_in+' == 0, 1, null())'
     grass.mapcalc(expression1, overwrite = True, quiet = True)
     grass.run_command('r.grow.distance', input=i+'_invert', distance=i+'_invert_forest_neg_eucldist',overwrite = True)
-    expression2=i+'_invert_matrix = if('+i+'==0,null(),1)'
+    expression2=i+'_invert_matrix = if('+i_in+' == 0, null(), 1)'
     grass.mapcalc(expression2, overwrite = True, quiet = True)
     grass.run_command('r.grow.distance', input=i+'_invert_matrix', distance=i+'_invert_matrix_pos_eucldist',overwrite = True)
     expression3=i+'_dist = '+i+'_invert_matrix_pos_eucldist-'+i+'_invert_forest_neg_eucldist'
@@ -829,14 +924,15 @@ def dist_edge(Listmapsdist):
     if Form1.prepareBIODIM:
       lista_maps_dist.append(i+'_dist')
     else:
-      grass.run_command('r.out.gdal', input=i+'_dist', out=i+'_DIST.tif',overwrite = True)
+      grass.run_command('r.out.gdal', input=i+'_dist', out=i+'_DIST.tif', overwrite = True)
       
     if Form1.removeTrash:
       txts = [i+'_invert', i+'_invert_forest_neg_eucldist', i+'_invert_matrix', i+'_invert_matrix_pos_eucldist']
       for txt in txts:
-        
-        grass.run_command('g.remove',type="raster",name=txt, flags='f')
-      
+        grass.run_command('g.remove', type="raster", name=txt, flags='f')
+    
+    cont += 1
+    
   if Form1.prepareBIODIM:
     create_TXTinputBIODIM(lista_maps_dist, "simulados_HABMAT_DIST", Form1.dirout)
     
@@ -906,9 +1002,9 @@ class Form1(wx.Panel):
 
         Form1.dirout=selecdirectori()
         
-        Form1.output_prefix2='Nome do arquivo + ext '
+        Form1.output_prefix2='lndscp_'
 
-        self.quote = wx.StaticText(self, id=-1, label="LandScape Connectivity",pos=wx.Point(20, 20))
+        self.quote = wx.StaticText(self, id=-1, label="LandScape Connectivity", pos=wx.Point(20, 20))
         
         font = wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD)
         self.quote.SetForegroundColour("blue")
@@ -952,15 +1048,15 @@ class Form1(wx.Panel):
        #______________________________________________________________________________________________________________
        #static text
         
-        self.SelecMetrcis = wx.StaticText(self,-1,"Choose Metric:",wx.Point(15,150))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Choose Metric:", wx.Point(15,150))
         
         
-        self.SelecMetrcis = wx.StaticText(self,-1,"Calculate Statics:",wx.Point(180,260))
-        self.SelecMetrcis = wx.StaticText(self,-1,"Create Distance Map:",wx.Point(180,280))
-        self.SelecMetrcis = wx.StaticText(self,-1,"Create Habitat Map:",wx.Point(180,300))
-        self.SelecMetrcis = wx.StaticText(self,-1,"Regular Expression:",wx.Point(160, 62))
-        self.SelecMetrcis = wx.StaticText(self,-1,"List Scale Unit(m):",wx.Point(180,200))
-        self.SelecMetrcis = wx.StaticText(self,-1,"List Ed. Unit(m):",wx.Point(180,228))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Calculate Statistics:", wx.Point(180,260))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Create Distance Map:", wx.Point(180,280))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Create Habitat Map:", wx.Point(180,300))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Regular Expression:", wx.Point(160, 62))
+        self.SelecMetrcis = wx.StaticText(self,-1,"List Scale Unit(m):", wx.Point(180,200))
+        self.SelecMetrcis = wx.StaticText(self,-1,"List Edge Unit(m):", wx.Point(180,228))
         wx.EVT_TEXT(self, 185, self.EvtText)
         
         
@@ -970,36 +1066,36 @@ class Form1(wx.Panel):
         #______________________________________________________________________________________________________________
         # Checkbox
 
-        self.insure = wx.CheckBox(self, 96, "AH Patch.",wx.Point(90,150))
+        self.insure = wx.CheckBox(self, 96, "AH Patch.", wx.Point(90,150))
         wx.EVT_CHECKBOX(self, 96,   self.EvtCheckBox)     
         
-        self.insure = wx.CheckBox(self, 95, "AH Frag.",wx.Point(160,150))
+        self.insure = wx.CheckBox(self, 95, "AH Frag.", wx.Point(160,150))
         wx.EVT_CHECKBOX(self, 95,   self.EvtCheckBox)   
         
-        self.insure = wx.CheckBox(self, 97, "AH Con.",wx.Point(230,150))
+        self.insure = wx.CheckBox(self, 97, "AH Con.", wx.Point(230,150))
         wx.EVT_CHECKBOX(self, 97,   self.EvtCheckBox)  
         
-        self.insure = wx.CheckBox(self, 150, "EDGE.",wx.Point(295,150))
+        self.insure = wx.CheckBox(self, 150, "EDGE", wx.Point(295,150))
         wx.EVT_CHECKBOX(self, 150,   self.EvtCheckBox)        
         
         """
         essa funcao a baixo eh o botao para saber se vai ou nao calcular a statistica para os mapas
         """
-        self.insure = wx.CheckBox(self, 98, "",wx.Point(290,260)) # Form1.calcStatistics botaozainho da statisica
+        self.insure = wx.CheckBox(self, 98, "", wx.Point(290,260)) # Form1.calcStatistics botaozainho da statisica
         wx.EVT_CHECKBOX(self, 98,   self.EvtCheckBox)  
         
         
         """
         essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
         """
-        self.insure = wx.CheckBox(self, 99, "",wx.Point(290,280)) # Form1.calcStatistics botaozainho da statisica
+        self.insure = wx.CheckBox(self, 99, "", wx.Point(290,280)) # Form1.Distedge botaozainho da distancia em relacao a borda
         wx.EVT_CHECKBOX(self, 99,   self.EvtCheckBox)  
         
         
         """
         essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
         """
-        self.insure = wx.CheckBox(self, 100, "",wx.Point(290,300)) #Criando mapa de habita botaozainho da statisica
+        self.insure = wx.CheckBox(self, 100, "", wx.Point(290,300)) # Criando mapa de habitat botaozainho Form1.Habmat
         wx.EVT_CHECKBOX(self, 100,   self.EvtCheckBox)          
         
             
@@ -1038,6 +1134,19 @@ class Form1(wx.Panel):
         wx.StaticBitmap(self, -1, jpg1, (380,40), (jpg1.GetWidth(),  jpg1.GetHeight()), style=wx.SIMPLE_BORDER)        
  
     def EvtRadioBox(self, event):
+      if event.GetId()==905:
+        Form1.prepareBIODIM=event.GetString()
+        print Form1.prepareBIODIM
+        if Form1.prepareBIODIM=="No":
+          Form1.prepareBIODIM=False
+        else:
+          Form1.prepareBIODIM=True
+          
+      if Form1.prepareBIODIM:        
+        Form1.speciesList=grass.list_grouped ('rast') ['userbase']
+      else:
+        Form1.speciesList=grass.list_grouped ('rast') ['PERMANENT']      
+      
       if event.GetId()==92:
         Form1.formcalculate=event.GetString()
         print Form1.formcalculate
@@ -1053,14 +1162,6 @@ class Form1(wx.Panel):
           #______________________________________________________________________________________________________
         else:
           self.Refresh()
-       
-      if event.GetId()==905:
-        Form1.prepareBIODIM=event.GetString()
-        print Form1.prepareBIODIM
-        if Form1.prepareBIODIM=="No":
-          Form1.prepareBIODIM=False
-        else:
-          Form1.prepareBIODIM=True
         
         
        # self.logger.AppendText('Dispersive behaviour: %s\n' % )
@@ -1092,17 +1193,17 @@ class Form1(wx.Panel):
           if Form1.formcalculate=="Single":
             if Form1.Habmat: ############ adicionei isso aqui: talvez temos que aplicar as outras funcoes ja nesse mapa?
               ###### as outras funcoes precisam de um mapa binario de entrada? ou pode ser so um mapa habitat/null?
-              create_habmat_single(Form1.mapa_entrada)            
+              create_habmat_single(Form1.mapa_entrada, prefix = Form1.output_prefix2+'0001')            
             if Form1.Patch==True:   
-              patchSingle(Form1.mapa_entrada)
+              patchSingle(Form1.mapa_entrada, prefix = Form1.output_prefix2+'0001')
             if Form1.Frag==True:
-              areaFragSingle(Form1.mapa_entrada)
+              areaFragSingle(Form1.mapa_entrada, prefix = Form1.output_prefix2+'0001')
             if Form1.Cone==True:
-              areaconSingle(Form1.mapa_entrada)
+              areaconSingle(Form1.mapa_entrada, prefix = Form1.output_prefix2+'0001')
             if Form1.checEDGE==True:
-              create_EDGE_single(Form1.mapa_entrada, Form1.escala_ED, Form1.dirout)
+              create_EDGE_single(Form1.mapa_entrada, Form1.escala_ED, Form1.dirout, prefix = Form1.output_prefix2+'0001')
             if Form1.Dist==True:
-              dist_edge_Single(Form1.mapa_entrada)
+              dist_edge_Single(Form1.mapa_entrada, prefix = Form1.output_prefix2+'0001')
             
           else:
                       
@@ -1113,17 +1214,17 @@ class Form1(wx.Panel):
               
             if Form1.Habmat: ############ adicionei isso aqui: talvez temos que aplicar as outras funcoes ja nesse mapa?
               ###### as outras funcoes precisam de um mapa binario de entrada? ou pode ser so um mapa habitat/null?
-              create_habmat(Form1.ListMapsGroupCalc)            
+              create_habmat(Form1.ListMapsGroupCalc, prefix = Form1.output_prefix2)            
             if Form1.Patch==True:
-              Form1.ListmapsPatch=Patch(Form1.ListMapsGroupCalc) ####### john precisa atribuir isso aqui?
+              Form1.ListmapsPatch=Patch(Form1.ListMapsGroupCalc, prefix = Form1.output_prefix2) ####### john precisa atribuir isso aqui?
             if Form1.Frag==True:
-              areaFrag(Form1.ListMapsGroupCalc)
+              areaFrag(Form1.ListMapsGroupCalc, prefix = Form1.output_prefix2)
             if Form1.Cone==True:
-              areacon(Form1.ListMapsGroupCalc) 
+              areacon(Form1.ListMapsGroupCalc, prefix = Form1.output_prefix2) 
             if Form1.checEDGE==True:
-              create_EDGE(Form1.ListMapsGroupCalc,Form1.escala_ED,Form1.dirout)
+              create_EDGE(Form1.ListMapsGroupCalc, Form1.escala_ED, Form1.dirout, prefix = Form1.output_prefix2)
             if Form1.Dist==True:
-              dist_edge(Form1.ListMapsGroupCalc)
+              dist_edge(Form1.ListMapsGroupCalc, prefix = Form1.output_prefix2)
             
                
         
@@ -1242,7 +1343,7 @@ class Form1(wx.Panel):
         if event.GetId()==98: #criando txtx de statitiscas
           if int(event.Checked())==1: 
             Form1.calcStatistics=True           
-            self.logger.AppendText('EvtCheckBox:\nCalculte statistics: Connectivity '+`Form1.calcStatistics`+' \n')
+            self.logger.AppendText('EvtCheckBox:\nCalculate connectivity statistics: '+`Form1.calcStatistics`+' \n')
             
             
             
