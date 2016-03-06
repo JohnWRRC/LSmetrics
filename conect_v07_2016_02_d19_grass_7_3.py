@@ -104,7 +104,7 @@ def createtxt(mapa, dirs, outname=False):
 #----------------------------------------------------------------------------------
 # Auxiliary functions
 
-def selecdirectori():
+def selectdirectory():
   dialog = wx.DirDialog(None, "Select the output folder:",style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
   if dialog.ShowModal() == wx.ID_OK:
     #print ">>..................",dialog.GetPath()
@@ -116,7 +116,7 @@ def createBinarios_single(ListMapBins):
   This function reclassify an input map into a binary map, according to reclassification rules passed by
   a text file
   """
-  readtxt=selecdirectori()
+  readtxt=selectdirectory()
   grass.run_command('g.region',rast=ListMapBins)
   grass.run_command('r.reclass',input=ListMapBins,output=ListMapBins+'_HABMAT',rules=readtxt, overwrite = True)
   
@@ -131,7 +131,7 @@ def createBinarios(ListMapBins):
   This function reclassify a series of input maps into binary maps, according to reclassification rules passed by
   a text file
   """
-  readtxt=selecdirectori()
+  readtxt=selectdirectory()
   for i in ListMapBins:
     grass.run_command('g.region',rast=i)
     grass.run_command('r.reclass',input=i,output=i+'_HABMAT',rules=readtxt, overwrite = True)
@@ -152,7 +152,7 @@ def create_habmat_single(ListMapBins_in, prefix = ''):
   
   # opcao 1: ler um arquivo e fazer reclass
   # TEMOS QUE ORGANIZAR ISSO AINDA!!
-  #readtxt=selecdirectori()
+  #readtxt=selectdirectory()
   #grass.run_command('g.region',rast=ListMapBins)
   #grass.run_command('r.reclass',input=ListMapBins,output=ListMapBins+'_HABMAT',rules=readtxt, overwrite = True)
   
@@ -196,7 +196,7 @@ def create_habmat(ListMapBins, prefix = ''):
   
   # opcao 1: ler um arquivo e fazer reclass
   # TEMOS QUE ORGANIZAR ISSO AINDA!!
-  #readtxt=selecdirectori()
+  #readtxt=selectdirectory()
   #grass.run_command('g.region',rast=ListMapBins)
   #grass.run_command('r.reclass',input=ListMapBins,output=ListMapBins+'_HABMAT',rules=readtxt, overwrite = True)
   
@@ -1000,7 +1000,7 @@ class Form1(wx.Panel):
         
 
 
-        Form1.dirout=selecdirectori()
+        Form1.dirout=selectdirectory()
         
         Form1.output_prefix2='lndscp_'
 
