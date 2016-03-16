@@ -3,10 +3,8 @@
 # Ploting results of connectivity assessment
 # LS Connectivity
 #
-# Golden Lion Tamarin Landscape
-# around Sao Joao river watershed, RJ, Brazil
-#
-# Bernardo Niebuhr - bernardo_brandaum at gmail.com
+# Bernardo Niebuhr - bernardo_brandaum at yahoo.com.br
+# John Ribeiro - jw.ribeiro.rc at gmail.com
 #
 # No rights in the world are reserved
 # Fell free to use, modify, and share
@@ -14,12 +12,12 @@
 
 # Loading libraries
 
-# Working directory
-setwd("C:\\Users\\ber\\Documents\\Documentos_ber\\Atividades 2014\\biodim\\arrumando_paisagens_reais_2015_10_d27\\__testes_biodim\\teste_ber_leec\\result_ber_teste")
+# Working directory - where txt files are
+setwd("C:\\Users\\LEEC B\\Desktop\\teste_ls_con")
 
 # Loading data
 
-prefix <- "Clip_mosaico_final_clip_rast_clip_tif_reclass2"
+prefix <- "lndscp_0001_Mapa0001_tif_bin"
 
 # Patch size
 patch <- read.table(paste(prefix, "_patch_AreaHA.txt", sep=""), header = T, sep = ",")
@@ -40,12 +38,13 @@ nm2 <- nm[order(aa)]
 con <- list()
 for(i in 1:length(nm2)) con[[i]] <- read.table(nm2[i], header = T, sep = ",")
 names(con) <- bb
+con
 
 # Edges
 nm <- list.files(pattern = "EDGE")
 nm <- nm[grep("txt", nm)]
 
-a <- strsplit(nm, split = "_*m.txt")
+a <- strsplit(nm, split = "_*m_temp1.txt")
 b <- c()
 for(i in 1:length(nm)) b <- c(b, strsplit(a[[i]][1], split="EDGE"))
 aa <- c()
@@ -63,7 +62,7 @@ colnames(edge) <- c("matrix", "edge", "interior")
 edge
 
 # Ploting
-pdf("plots_connectivity.pdf")
+pdf("LS_connectivity_plots.pdf")
 
 # Patch area
 brk <- c(0, 10, 50, 100, 150, 200, 500, 1000, 1500, 2000)
@@ -106,8 +105,10 @@ text(c(0.8, 2, 3.2, 4.4, 5.6, 6.8, 8, 9.2, 10.4)-0.1,
      cum.area.f + 120, paste(round(freq_lev, 2),"%NP", sep = ""), cex = 0.7)
 par(op)
 
-# Connectivity
+# FRAG patches
+# We must do it!
 
+# Connectivity
 con
 avg.cluster <- sapply(con, colMeans)[2,]
 max.cluster <- sapply(con, function(x) sapply(x, max))[2,]
@@ -130,12 +131,6 @@ edge$cum.area <- edge$edge/tot
 dists <- as.numeric(rownames(edge))
 plot(dists, edge$cum.area, type = "b", log = "",
      xlab = "Edge distance (m)", ylab = "Cumulative area (%)")
-plot(dists, edge$cum.area, type = "b", log = "x",
-     xlab = "Edge distance (m)", ylab = "Cumulative area (%)")
-segments(x0 = dists[2], y0 = edge$cum.area[1], x1 = dists[2], y1 = edge$cum.area[2], lty = 2)
-segments(x0 = dists[1]-5, y0 = edge$cum.area[2], x1 = dists[2], y1 = edge$cum.area[2], lty = 2)
-segments(x0 = dists[5], y0 = edge$cum.area[1], x1 = dists[5], y1 = edge$cum.area[5], lty = 2)
-segments(x0 = dists[1]-5, y0 = edge$cum.area[5], x1 = dists[5], y1 = edge$cum.area[5], lty = 2)
 
 brk <- c(50, 100, 250, 500, 750, 1000)
 when.break <- sapply(brk, function(x) max(which(dists < x)))
