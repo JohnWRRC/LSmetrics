@@ -1019,7 +1019,7 @@ class Form1(wx.Panel):
         self.editname = wx.TextCtrl(self, 190, '', wx.Point(160, 82),
                                     wx.Size(100,-1)) #Regular expression
         self.editname = wx.TextCtrl(self, 191, '', wx.Point(270,200), wx.Size(80,-1)) #escala
-        self.editname = wx.TextCtrl(self, 192, '', wx.Point(260,225), wx.Size(90,-1)) #borda
+        self.editname = wx.TextCtrl(self, 192, '', wx.Point(270,225), wx.Size(80,-1)) #borda
         
         wx.EVT_TEXT(self, 190, self.EvtText)
         wx.EVT_TEXT(self, 191, self.EvtText)
@@ -1054,7 +1054,7 @@ class Form1(wx.Panel):
         self.SelecMetrcis = wx.StaticText(self,-1,"Calculate Statistics:", wx.Point(180,260))
         self.SelecMetrcis = wx.StaticText(self,-1,"Create Distance Map:", wx.Point(180,280))
         self.SelecMetrcis = wx.StaticText(self,-1,"Create Habitat Map:", wx.Point(180,300))
-        self.SelecMetrcis = wx.StaticText(self,-1,"Regular Expression:", wx.Point(160, 62))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Regular Expression:", wx.Point(165, 62))
         self.SelecMetrcis = wx.StaticText(self,-1,"List Scale Unit(m):", wx.Point(180,200))
         self.SelecMetrcis = wx.StaticText(self,-1,"List Edge Unit(m):", wx.Point(180,228))
         wx.EVT_TEXT(self, 185, self.EvtText)
@@ -1110,7 +1110,7 @@ class Form1(wx.Panel):
         
         # radio boxes para saber se vai cacular pro BIODIM ou Nao
         self.BioDimChosse = ['No', 'Yes',          ]
-        rb = wx.RadioBox(self, 905, "Calc. For BioDim", wx.Point(270, 62), wx.DefaultSize,
+        rb = wx.RadioBox(self, 905, "Calc. For BioDim", wx.Point(275, 62), wx.DefaultSize,
                          self.BioDimChosse, 2, wx.RA_SPECIFY_COLS)
         wx.EVT_RADIOBOX(self, 905, self.EvtRadioBox)        
         
