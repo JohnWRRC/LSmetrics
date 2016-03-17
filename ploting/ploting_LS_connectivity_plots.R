@@ -119,7 +119,7 @@ lines(as.numeric(attr(avg.cluster, "names")), avg.cluster)
 
 # para o maximo nao faz sentido fazer agora...
 plot(as.numeric(attr(max.cluster, "names")), max.cluster, pch=21, bg=1,
-     xlab = "Functional distance (m)", ylab = "Expected cluster size (ha)")
+     xlab = "Functional distance (m)", ylab = "Maximum cluster size (ha)")
 lines(as.numeric(attr(max.cluster, "names")), max.cluster)
 
 # Edges
