@@ -1,4 +1,5 @@
 # LandScape (LS) Connectivity
+<img src="images/LSapps_con.png"/>
 
 This repository is being used to develop and share LS Connectivity software.
 
@@ -18,6 +19,8 @@ Now, it is time to use the app itself. Change to LS Connectivity directory and r
 cd PROGRAMA_LS_CONECTIVITY
 python LS_connectivity_v08_grass7.py
 ```
+
+<img src="images/LS_Con_GUI.png"/>
 
 LS Connectivity is currently based on binary (habitat/non-habitat) maps. If your maps are already classified in this fashion, you can use it straightforwardly as input to calculate metrics and statistics. If not, first you should `Create habitat map` and tell the app which codes correspond to habitat. Then, you can use the resulting map as input to calculate landscape metrics.
 
