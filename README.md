@@ -1,5 +1,4 @@
 # LandScape (LS) Connectivity
-<img src="images/LSapps_con.png"/>
 
 This repository is being used to develop and share LS Connectivity software.
 
