@@ -16,7 +16,7 @@
  landscape statistics and generate maps of landscape connectivity.
  Also, the software is designed to prepare maps and enviroment for running 
  BioDIM, an individual-based model of animal movement in fragmented landscapes.
- The software runs in a GRASS environment and uses raster images as input.
+ The software runs in a GRASS GIS environment and uses raster images as input.
  
  Aqui podemos colocar mais comentarios sobre o funcionamento do LS Con...
 """
@@ -40,12 +40,6 @@ ID_EXIT=110
 # CONFERIR LISTA DE PATTERN MULTIPLE COM O JOHN (E TODAS AS VEZES QUE APARECEU O [PERMANENT] OU [userbase])
 
 ########################
-# A fazer:
-# tres botoes: (tem que transformar em botoes) 
-# - joga o trash fora ou nao (talvez nao pecise ser um botao...) - para deletar rasters auxiliares criados
-# - statistics: gera arquivos de texto com as estatisticas ou nao
-# - biodim: prepara arquivos para o biodim (como PIDs, varias areas etc ou nao)
-
 # -arrumar script R para gerar as figuras que queremos
 # como conversa o R com o grass? da pra rodar o script R em BATCH mode?
 
@@ -148,7 +142,7 @@ def create_habmat_single(ListMapBins_in, prefix = ''):
   a text file
   """
 
-  ListMapBins = prefix+'_'+ListMapBins_in
+  ListMapBins = prefix+ListMapBins_in
   
   # opcao 1: ler um arquivo e fazer reclass
   # TEMOS QUE ORGANIZAR ISSO AINDA!!
@@ -204,14 +198,17 @@ def create_habmat(ListMapBins, prefix = ''):
   cont = 1
   for i_in in ListMapBins:
     
-    if cont <= 9:
-      pre_numb = "000"+`cont`
-    elif cont <= 99:
-      pre_numb = "00"+`cont`
-    elif cont <= 999:        
-      pre_numb = "0"+`cont`
-    else: 
-      pre_numb = `cont`    
+    if prefix == '':
+      pre_numb = ''
+    else:
+      if cont <= 9:
+        pre_numb = "000"+`cont`+'_'
+      elif cont <= 99:
+        pre_numb = "00"+`cont`+'_'
+      elif cont <= 999:        
+        pre_numb = "0"+`cont`+'_'
+      else: 
+        pre_numb = `cont`+'_'
     
     if(len(Form1.list_habitat_classes) > 0):
       conditional = ''
@@ -222,7 +219,7 @@ def create_habmat(ListMapBins, prefix = ''):
         conditional = conditional+i_in+' == '+j
         cc += 1
       
-      i = prefix+pre_numb+'_'+i_in
+      i = prefix+pre_numb+i_in
       
       expression = i+'_HABMAT = if('+conditional+', 1, 0)'
       grass.run_command('g.region', rast=i_in)
@@ -368,7 +365,7 @@ def areaFragSingle(ListmapsFrag_in, prefix = ''):
   - generatics statistics - Area per patch (if Form1.calcStatistics == True)
   """
   
-  ListmapsFrag = prefix+'_'+ListmapsFrag_in
+  ListmapsFrag = prefix+ListmapsFrag_in
   
   grass.run_command('g.region', rast=ListmapsFrag_in)
   Lista_escalafragM, listmeters = escala_frag(ListmapsFrag_in, Form1.escala_frag_con)
@@ -427,16 +424,19 @@ def areaFrag(ListmapsFrag, prefix = ''):
   cont = 1
   for i_in in ListmapsFrag:
     
-    if cont <= 9:
-      pre_numb = "000"+`cont`
-    elif cont <= 99:
-      pre_numb = "00"+`cont`
-    elif cont <= 999:        
-      pre_numb = "0"+`cont`
-    else: 
-      pre_numb = `cont`
+    if prefix == '':
+      pre_numb = ''
+    else:
+      if cont <= 9:
+        pre_numb = "000"+`cont`+'_'
+      elif cont <= 99:
+        pre_numb = "00"+`cont`+'_'
+      elif cont <= 999:        
+        pre_numb = "0"+`cont`+'_'
+      else: 
+        pre_numb = `cont`+'_'
       
-    i = prefix+pre_numb+'_'+i_in
+    i = prefix+pre_numb+i_in
           
     grass.run_command('g.region', rast=i_in)
     Lista_escalafragM, listmeters = escala_frag(i_in, Form1.escala_frag_con)
@@ -502,7 +502,7 @@ def patchSingle(Listmapspatch_in, prefix = ''):
   - generatics statistics - Area per patch (if Form1.calcStatistics == True)
   """
   
-  Listmapspatch = prefix+'_'+Listmapspatch_in
+  Listmapspatch = prefix+Listmapspatch_in
   
   grass.run_command('g.region', rast=Listmapspatch_in)
   grass.run_command('r.clump', input=Listmapspatch_in, output=Listmapspatch+"_patch_clump", overwrite = True)
@@ -551,16 +551,19 @@ def Patch(Listmapspatch, prefix = ''):
   cont = 1
   for i_in in Listmapspatch:
     
-    if cont <= 9:
-      pre_numb = "000"+`cont`
-    elif cont <= 99:
-      pre_numb = "00"+`cont`
-    elif cont <= 999:        
-      pre_numb = "0"+`cont`
-    else: 
-      pre_numb = `cont`
+    if prefix == '':
+      pre_numb = ''
+    else:
+      if cont <= 9:
+        pre_numb = "000"+`cont`+'_'
+      elif cont <= 99:
+        pre_numb = "00"+`cont`+'_'
+      elif cont <= 999:        
+        pre_numb = "0"+`cont`+'_'
+      else: 
+        pre_numb = `cont`+'_'
       
-    i = prefix+pre_numb+'_'+i_in
+    i = prefix+pre_numb+i_in
 
     grass.run_command('g.region', rast=i_in)
     grass.run_command('r.clump', input=i_in, output=i+"_patch_clump", overwrite = True)
@@ -613,7 +616,7 @@ def areaconSingle(Listmapspatch_in, prefix = ''):
   - generatics statistics - Area per patch (if Form1.calcStatistics == True)
   """
   
-  Listmapspatch = prefix+'_'+Listmapspatch_in
+  Listmapspatch = prefix+Listmapspatch_in
 
   grass.run_command('g.region', rast=Listmapspatch_in)
   listescalafconM, listmeters = escala_con(Listmapspatch_in, Form1.escala_frag_con)
@@ -687,16 +690,19 @@ def areacon(Listmapspatch, prefix = ''):
   cont = 1
   for i_in in Listmapspatch:
     
-    if cont <= 9:
-      pre_numb = "000"+`cont`
-    elif cont <= 99:
-      pre_numb = "00"+`cont`
-    elif cont <= 999:        
-      pre_numb = "0"+`cont`
-    else: 
-      pre_numb = `cont`
+    if prefix == '':
+      pre_numb = ''
+    else:
+      if cont <= 9:
+        pre_numb = "000"+`cont`+'_'
+      elif cont <= 99:
+        pre_numb = "00"+`cont`+'_'
+      elif cont <= 999:        
+        pre_numb = "0"+`cont`+'_'
+      else: 
+        pre_numb = `cont`+'_'
       
-    i = prefix+pre_numb+'_'+i_in
+    i = prefix+pre_numb+i_in
     
     grass.run_command('g.region', rast=i_in)
     listescalafconM, listmeters = escala_con(i_in, Form1.escala_frag_con)
@@ -776,7 +782,7 @@ def create_EDGE_single(ListmapsED_in, escale_ed, dirs, prefix = ''):
   - generatics statistics - Area per region (matrix/edge/core) (if Form1.calcStatistics == True)
   """  
   
-  ListmapsED = prefix+'_'+ListmapsED_in
+  ListmapsED = prefix+ListmapsED_in
   
   grass.run_command('g.region', rast=ListmapsED_in)
   listsize, listapoioname = escala_frag(ListmapsED_in, escale_ed)
@@ -815,16 +821,19 @@ def create_EDGE(ListmapsED, escale_ed, dirs, prefix = ''):
   cont = 1
   for i_in in ListmapsED:
     
-    if cont <= 9:
-      pre_numb = "000"+`cont`
-    elif cont <= 99:
-      pre_numb = "00"+`cont`
-    elif cont <= 999:        
-      pre_numb = "0"+`cont`
-    else: 
-      pre_numb = `cont`    
+    if prefix == '':
+      pre_numb = ''
+    else:
+      if cont <= 9:
+        pre_numb = "000"+`cont`+'_'
+      elif cont <= 99:
+        pre_numb = "00"+`cont`+'_'
+      elif cont <= 999:        
+        pre_numb = "0"+`cont`+'_'
+      else: 
+        pre_numb = `cont`+'_'
     
-    i = prefix+pre_numb+'_'+i_in
+    i = prefix+pre_numb+i_in
     
     grass.run_command('g.region', rast=i_in)
     listsize, listapoioname = escala_frag(i_in, escale_ed)
@@ -864,7 +873,7 @@ def dist_edge_Single(Listmapsdist_in, prefix = ''):
   - generates and exports maps of distance to edge (DIST)
   """
 
-  Listmapsdist = prefix+'_'+Listmapsdist_in
+  Listmapsdist = prefix+Listmapsdist_in
   
   grass.run_command('g.region', rast=Listmapsdist_in)
   expression1=Listmapsdist+'_invert = if('+Listmapsdist_in+' == 0, 1, null())'
@@ -900,16 +909,19 @@ def dist_edge(Listmapsdist, prefix = ''):
   cont = 1
   for i_in in Listmapsdist:
     
-    if cont <= 9:
-      pre_numb = "000"+`cont`
-    elif cont <= 99:
-      pre_numb = "00"+`cont`
-    elif cont <= 999:        
-      pre_numb = "0"+`cont`
-    else: 
-      pre_numb = `cont`    
+    if prefix == '':
+      pre_numb = ''
+    else:
+      if cont <= 9:
+        pre_numb = "000"+`cont`+'_'
+      elif cont <= 99:
+        pre_numb = "00"+`cont`+'_'
+      elif cont <= 999:        
+        pre_numb = "0"+`cont`+'_'
+      else: 
+        pre_numb = `cont`+'_'
 
-    i = prefix+pre_numb+'_'+i_in
+    i = prefix+pre_numb+i_in
 
     grass.run_command('g.region', rast=i_in)
     expression1=i+'_invert = if('+i_in+' == 0, 1, null())'
@@ -949,15 +961,15 @@ class Form1(wx.Panel):
         Form1.Patch=False
         Form1.Frag=False
         Form1.Cone=False
-        Form1.Dist=False ################ mudar aqui, como ainda nao tem botao deixei para criar sempre um mapa/txt de dist
-        Form1.Habmat=False ################ mudar aqui, como ainda nao tem botao deixei para criar sempre um mapa/txt de habmat
+        Form1.Dist=False
+        Form1.Habmat=False
         Form1.background_filename=[]
         
         ###########################
         Form1.removeTrash=True
         Form1.prepareBIODIM=False
         Form1.calcStatistics=False
-        Form1.list_habitat_classes=['12'] ########## adicionei isso: lista de strings com classes de habitat ########## como ler e transformar numa lista? precisa de uma funcao pra isso?
+        Form1.list_habitat_classes=[]
         
         Form1.size = 450
         Form1.hsize = 450
@@ -990,8 +1002,7 @@ class Form1(wx.Panel):
         
         #________________________________________________
 
-        if Form1.prepareBIODIM:
-          
+        if Form1.prepareBIODIM: 
           Form1.speciesList=grass.list_grouped ('rast') ['userbase']
         else:
           Form1.speciesList=grass.list_grouped ('rast') ['PERMANENT']
@@ -1002,7 +1013,7 @@ class Form1(wx.Panel):
 
         Form1.dirout=selectdirectory()
         
-        Form1.output_prefix2='lndscp_'
+        Form1.output_prefix2=''
 
         self.quote = wx.StaticText(self, id=-1, label="LandScape Connectivity", pos=wx.Point(20, 20))
         
@@ -1014,16 +1025,18 @@ class Form1(wx.Panel):
         
         # A multiline TextCtrl - This is here to show how the events work in this program, don't pay too much attention to it
         #caixa de mensagem
-        self.logger = wx.TextCtrl(self,5, '',wx.Point(20,330), wx.Size(340,120),wx.TE_MULTILINE | wx.TE_READONLY)
+        self.logger = wx.TextCtrl(self,5, '',wx.Point(20,350), wx.Size(340,120),wx.TE_MULTILINE | wx.TE_READONLY)
         
         self.editname = wx.TextCtrl(self, 190, '', wx.Point(160, 82),
                                     wx.Size(100,-1)) #Regular expression
         self.editname = wx.TextCtrl(self, 191, '', wx.Point(270,200), wx.Size(80,-1)) #escala
         self.editname = wx.TextCtrl(self, 192, '', wx.Point(270,225), wx.Size(80,-1)) #borda
+        self.editname = wx.TextCtrl(self, 193, '', wx.Point(270,318), wx.Size(80,-1)) #habitat maps
         
         wx.EVT_TEXT(self, 190, self.EvtText)
         wx.EVT_TEXT(self, 191, self.EvtText)
         wx.EVT_TEXT(self, 192, self.EvtText)
+        wx.EVT_TEXT(self, 193, self.EvtText)
         #____________________________________________________________________________
         # A button
         self.button =wx.Button(self, 10, "START CALCULATIONS", wx.Point(20, 480))
@@ -1054,9 +1067,11 @@ class Form1(wx.Panel):
         self.SelecMetrcis = wx.StaticText(self,-1,"Calculate Statistics:", wx.Point(180,260))
         self.SelecMetrcis = wx.StaticText(self,-1,"Create Distance Map:", wx.Point(180,280))
         self.SelecMetrcis = wx.StaticText(self,-1,"Create Habitat Map:", wx.Point(180,300))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Codes for habitat:", wx.Point(180,320))
         self.SelecMetrcis = wx.StaticText(self,-1,"Regular Expression:", wx.Point(165, 62))
         self.SelecMetrcis = wx.StaticText(self,-1,"List Scale Unit(m):", wx.Point(180,200))
         self.SelecMetrcis = wx.StaticText(self,-1,"List Edge Unit(m):", wx.Point(180,228))
+        
         wx.EVT_TEXT(self, 185, self.EvtText)
         
         
@@ -1188,27 +1203,32 @@ class Form1(wx.Panel):
         #______________________________________________________________________________________________________________ 
         if event.GetId()==10:   #10==START
           
-          os.chdir(Form1.dirout)         
+          os.chdir(Form1.dirout)
           
           if Form1.formcalculate=="Single":
+            
+            if Form1.prepareBIODIM:
+              Form1.output_prefix2 = 'lndscp_0001_'            
+            
             if Form1.Habmat: ############ adicionei isso aqui: talvez temos que aplicar as outras funcoes ja nesse mapa?
               ###### as outras funcoes precisam de um mapa binario de entrada? ou pode ser so um mapa habitat/null?
-              create_habmat_single(Form1.mapa_entrada, prefix = Form1.output_prefix2+'0001')            
+              create_habmat_single(Form1.mapa_entrada, prefix = Form1.output_prefix2)            
             if Form1.Patch==True:   
-              patchSingle(Form1.mapa_entrada, prefix = Form1.output_prefix2+'0001')
+              patchSingle(Form1.mapa_entrada, prefix = Form1.output_prefix2)
             if Form1.Frag==True:
-              areaFragSingle(Form1.mapa_entrada, prefix = Form1.output_prefix2+'0001')
+              areaFragSingle(Form1.mapa_entrada, prefix = Form1.output_prefix2)
             if Form1.Cone==True:
-              areaconSingle(Form1.mapa_entrada, prefix = Form1.output_prefix2+'0001')
+              areaconSingle(Form1.mapa_entrada, prefix = Form1.output_prefix2)
             if Form1.checEDGE==True:
-              create_EDGE_single(Form1.mapa_entrada, Form1.escala_ED, Form1.dirout, prefix = Form1.output_prefix2+'0001')
+              create_EDGE_single(Form1.mapa_entrada, Form1.escala_ED, Form1.dirout, prefix = Form1.output_prefix2)
             if Form1.Dist==True:
-              dist_edge_Single(Form1.mapa_entrada, prefix = Form1.output_prefix2+'0001')
+              dist_edge_Single(Form1.mapa_entrada, prefix = Form1.output_prefix2)
             
           else:
                       
             if Form1.prepareBIODIM:
               Form1.ListMapsGroupCalc=grass.list_grouped ('rast', pattern=Form1.RegularExp) ['userbase']
+              Form1.output_prefix2 = 'lndscp_'              
             else:
               Form1.ListMapsGroupCalc=grass.list_grouped ('rast', pattern=Form1.RegularExp) ['PERMANENT']   
               
@@ -1284,21 +1304,6 @@ class Form1(wx.Panel):
     def EvtText(self, event):
         #self.logger.AppendText('EvtText: %s\n' % event.GetString())
       #______________________________________________________________________________________________________________ 
-        if event.GetId()==20: #20=output_prefix
-            Form1.output_prefix=event.GetString()
-            
-        if event.GetId()==30: #30=popsize
-            not_int=0
-            try: 
-                int(event.GetString())
-            except ValueError:
-                not_int=1
-                
-            if not_int==1:
-                Form1.start_popsize=0
-            else:
-                Form1.start_popsize=int(event.GetString())
-        
            
         if event.GetId()==190:
           Form1.RegularExp=event.GetString() 
@@ -1307,8 +1312,12 @@ class Form1(wx.Panel):
           Form1.escala_frag_con=event.GetString()
           
         if event.GetId()==192:
-          Form1.escala_ED=event.GetString()        
-        
+          Form1.escala_ED=event.GetString()    
+          
+        if event.GetId()==193:
+          list_habitat=event.GetString()
+          Form1.list_habitat_classes=list_habitat.split(',')
+          #Form1.list_habitat_classes=[int(i) for i in list_habitat.split(',')] # we do not have to transform in integers - command run already in strings, for passing it to GRASS
 
     #______________________________________________________________________________________________________
     def EvtCheckBox(self, event):
