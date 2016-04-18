@@ -13,6 +13,10 @@ git clone https://github.com/JohnWRRC/PROGRAMA_LS_CONECTIVITY.git
 
 Open GRASS GIS and load or create your project location. If you do not know how to configure a project in GRASS, take a look [here](https://grass.osgeo.org/grass70/manuals/helptext.html). 
 After that, you should import your raster maps into GRASS environment. Have a look at [this](https://grass.osgeo.org/grass70/manuals/r.in.gdal.html) and [this](https://grasswiki.osgeo.org/wiki/Importing_data).
+**Make sure that your maps (and the GRASS GIS project) are in a projection and a geographic coordinate systems in which 
+distances are measured in meters, so that areas and distances are calculated in a meaningful way.**
+
+
 Now, it is time to use the app itself. Change to LS Connectivity directory and run it using python:
 ```bash
 cd PROGRAMA_LS_CONECTIVITY
