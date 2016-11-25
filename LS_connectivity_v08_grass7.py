@@ -30,6 +30,8 @@ import random
 import numpy as np
 import re
 import math
+from sets import Set
+
 
 
 ID_ABOUT=101
@@ -839,6 +841,7 @@ def create_EDGE(ListmapsED, escale_ed, dirs, prefix,calcStatistics,removeTrash):
   """
   
   cont = 1
+
   for i_in in ListmapsED:
     
     if prefix == '':
@@ -983,9 +986,133 @@ def PCTs_single(mapbin_HABITAT,escales):
     grass.run_command('r.out.gdal', input=outputname, out=outputname+'.tif', overwrite = True)
     grass.run_command('g.remove', type="raster", name='temp_PCT', flags='f')
     
+def PCTs(Listmap_HABITAT,escales):
+  for i in escales:
+    esc=int(i)
+    for mapHABT in Listmap_HABITAT:
+      outputname=mapHABT+"_PCT_esc_"+`esc`
+      windowsize=getsizepx(mapHABT, esc)
+      grass.run_command('g.region', rast=mapHABT)
+      grass.run_command('r.neighbors',input=mapHABT,out="temp_PCT",method='average',size=windowsize,overwrite = True )
+      expression1=outputname+'=temp_PCT*100'
+      grass.mapcalc(expression1, overwrite = True, quiet = True)    
+      grass.run_command('r.out.gdal', input=outputname, out=outputname+'.tif', overwrite = True)
+      grass.run_command('g.remove', type="raster", name='temp_PCT', flags='f')
+    
+
+#----------------------------------------------------------------------------------
+#def para diversidade de shannon
+
+def createUiqueList(tab_fid00_arry_subset_list,dim):
+    tab_fid00_arry_subset_list_apoio=[]
+    for i in xrange(dim):
+        temp1=tab_fid00_arry_subset_list[i][:]
+        for j in temp1:
+            if j != -9999 :
+                tab_fid00_arry_subset_list_apoio.append(j)
+    return tab_fid00_arry_subset_list_apoio
+      
+      
 
 
+def Shannon(st):
+    st = st
+    stList = list(st)
+    alphabet = list(Set(st)) # list of symbols in the string
+    
+    # calculate the frequency of each symbol in the string
+    freqList = []
+    for symbol in alphabet:
+        ctr = 0
+        for sym in stList:
+            if sym == symbol:
+                ctr += 1
+        freqList.append(float(ctr) / len(stList))
+    
+    # Shannon entropy
+    ent = 0.0
+    for freq in freqList:
+        ent = ent + freq * math.log(freq, 2)
+    ent = -ent
+    
+    #print int(math.ceil(ent))
+    return ent
 
+
+    
+def removeBlancsapce(ls):
+    ls2=[]
+    for i in ls:
+        if i != "":
+            ls2.append(i)
+            
+    return ls2
+
+def setNodata(arry,nrow,ncol,nodata):
+    for i in xrange(nrow):
+        for j in xrange(ncol):
+            arry[i][j]=nodata
+    return arry
+
+#----------------------------------------------------------------------------------
+def shannon_diversity(landuse_map,dirout,Raio_Analise):
+  for raio in Raio_Analise:
+    raio_int=int(raio)
+    os.chdir(dirout) #
+    grass.run_command('g.region',rast=landuse_map)
+    grass.run_command('r.out.ascii',input=landuse_map,output='landuse_map.asc',null_value=-9999,flags='h')
+    landusemap_arry=numpy.loadtxt('landuse_map.asc')
+    NRows,Ncols=landusemap_arry.shape
+    region_info = grass.parse_command('g.region', rast=landuse_map, flags='m')  # pegando a resolucao    
+    cell_size = float(region_info['ewres'])    
+    north=float(region_info['n'])
+    south=float(region_info['s'])
+    east=float(region_info['e'])
+    west=float(region_info['w'])
+    rows=int(region_info['rows'])
+    cols=int(region_info['cols'])
+    
+    Nodata=-9999
+    
+    JanelaLinha=(raio_int/cell_size)
+    
+    new_array = np.zeros(shape=(NRows,Ncols))
+    new_array=setNodata(new_array,NRows,Ncols,Nodata)  
+    
+    JanelaLinha= int(JanelaLinha)
+    #
+    for i in xrange(JanelaLinha,NRows-JanelaLinha):
+      for j in xrange(JanelaLinha,Ncols-JanelaLinha):
+        landusemap_arry_subset=landusemap_arry[i-JanelaLinha:i+JanelaLinha,j-JanelaLinha:j+JanelaLinha]    
+        landusemap_arry_subset_list=landusemap_arry_subset.tolist()
+        landusemap_arry_subset_list=createUiqueList(landusemap_arry_subset_list,len(landusemap_arry_subset_list))
+        landusemap_arry_subset_list=map(str,landusemap_arry_subset_list)
+        new_array[i][j]=round(Shannon(landusemap_arry_subset_list),6)   
+
+    txt=open("landuse_map_shannon.asc",'w')
+    
+    L_parameters_Info_asc=['north: ',`north`+'\nsouth: ',`south`+'\neast: ',`east`+'\nwest: ',`west`+'\nrows: ',`rows`+'\ncols: '+`cols`+'\n']
+    
+    check_ultm=1 # variavel que vai saber se e o ultimo
+    for i in L_parameters_Info_asc:
+        if check_ultm==len(L_parameters_Info_asc):
+            txt.write(i)    
+        else:
+            txt.write(i+' ')  
+        check_ultm=check_ultm+1 
+        
+    for i in range(NRows):
+        for j in range(Ncols):
+            txt.write(str(new_array[i][j])+' ')
+        
+        txt.write('\n')
+    
+    txt.close()  
+    grass.run_command('r.in.ascii',input="landuse_map_shannon.asc",output=landuse_map+"_Shanno_Div_Esc_"+`raio_int`,overwrite=True,null_value=-9999)
+    grass.run_command('r.colors',map=landuse_map+"_Shanno_Div_Esc_"+`raio_int`,color='differences')
+    os.remove('landuse_map_shannon.asc')
+    os.remove('landuse_map.asc')
+    
 #----------------------------------------------------------------------------------
 # GUI
 
@@ -1037,7 +1164,8 @@ class LS_connectivity(wx.Panel):
         self.chebin=''
         self.checEDGE=''
         self.checPCT=''
-        
+        self.check_diversity=''
+        self.analise_rayos=''
         
         
         
@@ -1066,20 +1194,22 @@ class LS_connectivity(wx.Panel):
         
         # A multiline TextCtrl - This is here to show how the events work in this program, don't pay too much attention to it
         #caixa de mensagem
-        self.logger = wx.TextCtrl(self,5, '',wx.Point(20,350), wx.Size(340,120),wx.TE_MULTILINE | wx.TE_READONLY)
+        self.logger = wx.TextCtrl(self,5, '',wx.Point(20,380), wx.Size(340,90),wx.TE_MULTILINE | wx.TE_READONLY)
         
         self.editname = wx.TextCtrl(self, 190, '', wx.Point(160, 82),
                                     wx.Size(100,-1)) #Regular expression
-        self.editname = wx.TextCtrl(self, 191, '', wx.Point(270,190), wx.Size(80,-1)) #escala
-        self.editname = wx.TextCtrl(self, 192, '', wx.Point(270,215), wx.Size(80,-1)) #borda
-        self.editname = wx.TextCtrl(self, 193, '', wx.Point(270,312), wx.Size(80,-1)) #habitat maps
-        self.editname = wx.TextCtrl(self, 194, '', wx.Point(270,240), wx.Size(80,-1)) #percentages
+        self.editname = wx.TextCtrl(self, 191, '', wx.Point(270,185), wx.Size(80,-1)) #escala
+        self.editname = wx.TextCtrl(self, 192, '', wx.Point(270,210), wx.Size(80,-1)) #borda
+        self.editname = wx.TextCtrl(self, 194, '', wx.Point(270,235), wx.Size(80,-1)) #percentages
+        self.editname = wx.TextCtrl(self, 193, '', wx.Point(270,307), wx.Size(80,-1)) #habitat maps
+        self.editname = wx.TextCtrl(self, 195, '', wx.Point(270,331), wx.Size(80,-1)) #raios de influencia para diversidade de shannon
         
         wx.EVT_TEXT(self, 190, self.EvtText)
         wx.EVT_TEXT(self, 191, self.EvtText)
         wx.EVT_TEXT(self, 192, self.EvtText)
         wx.EVT_TEXT(self, 193, self.EvtText)
         wx.EVT_TEXT(self, 194, self.EvtText)
+        wx.EVT_TEXT(self, 195, self.EvtText)
         #____________________________________________________________________________
         # A button
         self.button =wx.Button(self, 10, "START CALCULATIONS", wx.Point(20, 480))
@@ -1110,11 +1240,14 @@ class LS_connectivity(wx.Panel):
         self.SelecMetrcis = wx.StaticText(self,-1,"Calculate Statistics:", wx.Point(20,275))
         self.SelecMetrcis = wx.StaticText(self,-1,"Create Distance Map:", wx.Point(20,295))
         self.SelecMetrcis = wx.StaticText(self,-1,"Create Habitat Map:", wx.Point(20,315))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Create Shannon Diversity:", wx.Point(20,335))
+        self.SelecMetrcis = wx.StaticText(self,-1,"List of rays  Unit(m):", wx.Point(170,335))
         self.SelecMetrcis = wx.StaticText(self,-1,"Codes for habitat:", wx.Point(170,315))
         self.SelecMetrcis = wx.StaticText(self,-1,"Regular Expression:", wx.Point(165, 62))
         self.SelecMetrcis = wx.StaticText(self,-1,"List of scales for Area Path or Area Frag Unit(m):", wx.Point(20,190))
         self.SelecMetrcis = wx.StaticText(self,-1,"List of scales for EDGE metrics  Unit(m):", wx.Point(20,218))
         self.SelecMetrcis = wx.StaticText(self,-1,"List of scales for Percentage metrics  Unit(m):", wx.Point(20,242))
+        
         
         wx.EVT_TEXT(self, 185, self.EvtText)
         
@@ -1146,22 +1279,28 @@ class LS_connectivity(wx.Panel):
         """
         essa funcao a baixo eh o botao para saber se vai ou nao calcular a statistica para os mapas
         """
-        self.insure = wx.CheckBox(self, 98, "", wx.Point(140,275)) # self.calcStatistics botaozainho da statisica
+        self.insure = wx.CheckBox(self, 98, "", wx.Point(150,275)) # self.calcStatistics botaozainho da statisica
         wx.EVT_CHECKBOX(self, 98,   self.EvtCheckBox)  
         
         
         """
         essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
         """
-        self.insure = wx.CheckBox(self, 99, "", wx.Point(140,295)) # self.Distedge botaozainho da distancia em relacao a borda
+        self.insure = wx.CheckBox(self, 99, "", wx.Point(150,295)) # self.Distedge botaozainho da distancia em relacao a borda
         wx.EVT_CHECKBOX(self, 99,   self.EvtCheckBox)  
         
         
         """
-        essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
+        essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de habitat
         """
-        self.insure = wx.CheckBox(self, 100, "", wx.Point(140,315)) # Criando mapa de habitat botaozainho self.Habmat
-        wx.EVT_CHECKBOX(self, 100,   self.EvtCheckBox)          
+        self.insure = wx.CheckBox(self, 100, "", wx.Point(150,315)) # Criando mapa de habitat botaozainho self.Habmat
+        wx.EVT_CHECKBOX(self, 100,   self.EvtCheckBox)   
+        
+        """
+        essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de diveridade de shannon
+        """
+        self.insure = wx.CheckBox(self, 101, "", wx.Point(150,335)) # Criando mapa de habitat botaozainho self.Habmat
+        wx.EVT_CHECKBOX(self, 101,   self.EvtCheckBox)            
         
                 
         
@@ -1255,7 +1394,6 @@ class LS_connectivity(wx.Panel):
         #______________________________________________________________________________________________________________ 
         if event.GetId()==10:   #10==START
           
-          os.chdir(self.dirout)
           
           if self.formcalculate=="Single":
             
@@ -1283,8 +1421,10 @@ class LS_connectivity(wx.Panel):
               
             if self.checPCT==True:
               PCTs_single(self.mapa_entrada, self.list_esc_pct)
+            if self.check_diversity==True:
+              shannon_diversity(self.mapa_entrada, self.dirout, self.analise_rayos)
             
-          else:
+          else: # caso seja pra mais de um arquivos
                       
             if self.prepareBIODIM:
               self.ListMapsGroupCalc=grass.list_grouped ('rast', pattern=self.RegularExp) ['userbase']
@@ -1305,8 +1445,10 @@ class LS_connectivity(wx.Panel):
             if self.checEDGE==True:
               create_EDGE(self.ListMapsGroupCalc, self.escala_ED, self.dirout, self.output_prefix2, self.calcStatistics, self.removeTrash)
             if self.Dist==True:
-              dist_edge(self.mapa_entrada,self.output_prefix2, self.prepareBIODIM, self.dirout, self.removeTrash)
+              dist_edge(self.ListMapsGroupCalc,self.output_prefix2, self.prepareBIODIM, self.dirout, self.removeTrash)
             
+            if self.checPCT==True:
+              PCTs(self.ListMapsGroupCalc, self.list_esc_pct)
                
         
         #______________________________________________________________________________________________________________ 
@@ -1384,6 +1526,10 @@ class LS_connectivity(wx.Panel):
           # funcao para pegar a lista de escalas de porcentagem
           list_esc_percent=event.GetString()
           self.list_esc_pct=list_esc_percent.split(',')
+        if event.GetId()==195:
+          # funcao para pegar a lista de escalas de porcentagem
+          list_esc_raios_DV=event.GetString()
+          self.analise_rayos=list_esc_raios_DV.split(',')        
           
         
 
@@ -1434,7 +1580,15 @@ class LS_connectivity(wx.Panel):
             self.Habmat=True
             self.logger.AppendText('EvtCheckBox:\nCreate Habitat Map '+`self.Dist`+' \n')
         
-            
+        #
+        if event.GetId()==101: #check EDGE
+          if int(event.Checked())==1:
+            self.check_diversity=True
+            self.logger.AppendText('EvtCheckBox:\nMetric Selected: Diversity shannon map \n')
+          else:
+            self.check_diversity=False
+            self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Diversity shannon map \n')         
+        
         if event.GetId()==150: #check EDGE
           if int(event.Checked())==1:
             self.checEDGE=True
@@ -1452,8 +1606,10 @@ class LS_connectivity(wx.Panel):
           else:
             self.checPCT=False
             self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Percentage \n')           
-        ################
+        
         # CRIAR UM BOTAO E UM EVENTO DESSES AQUI, PARA O MAPA DE DIST (mesmo que ele so seja usado para o biodim)
+                  
+        
          
             
     #______________________________________________________________________________________________________
