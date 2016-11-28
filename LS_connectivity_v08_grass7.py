@@ -796,40 +796,78 @@ def mapcalcED(expressao):
   """
   grass.mapcalc(expressao, overwrite = True, quiet = True)        
 
-def create_EDGE_single(ListmapsED_in, escale_ed, dirs, prefix,calcStatistics,removeTrash):
+def create_EDGE_single(ListmapsED_in, escale_ed, dirs, prefix,calcStatistics,removeTrash,escale_pct):
   """
   Function for a single map
   This function separates habitat area into edge and interior/core regions, given a scale/distance defined as edge, and:
   - generates and exports maps with each region
   - generatics statistics - Area per region (matrix/edge/core) (if self.calcStatistics == True)
   """  
-  
+  os.chdir(dirs)
   ListmapsED = prefix+ListmapsED_in
   
   grass.run_command('g.region', rast=ListmapsED_in)
-  listsize, listapoioname = escala_frag(ListmapsED_in, escale_ed)
+  listsize, listmeters = escala_frag(ListmapsED_in, escale_ed)
   
-  x=0
+  cont_escale=0
   for i in listsize:
-    apoioname = int(listapoioname[x])  
+    apoioname = int(listmeters[cont_escale])  
+    formatnumber='0000'+`apoioname`
+    formatnumber=formatnumber[-4:]
+    outputname_meco=ListmapsED+'_MECO_'+formatnumber+'m' # nome de saida do mapa edge-core-matriz
+    outputname_core=ListmapsED+'_CORE_'+formatnumber+'m' # nome de saida do mapa Core
+    outputname_edge=ListmapsED+'_EDGE_'+formatnumber+'m' # nome de saida do mapa edge
+    
+    
     grass.run_command('r.neighbors', input=ListmapsED_in, output=ListmapsED+"_eroED_"+`apoioname`+'m', method='minimum', size=i, overwrite = True)
     inputs=ListmapsED+"_eroED_"+`apoioname`+'m,'+ListmapsED_in
     out=ListmapsED+'_EDGE'+`apoioname`+'m_temp1'
     grass.run_command('r.series', input=inputs, out=out, method='sum', overwrite = True)
-    espressaoEd=ListmapsED+'_EDGE'+`apoioname`+'m_temp2 = int('+ListmapsED+'_EDGE'+`apoioname`+'m_temp1)'
+    espressaoEd=ListmapsED+'_EDGE'+`apoioname`+'m_temp2 = int('+ListmapsED+'_EDGE'+`apoioname`+'m_temp1)' # criando uma mapa inteiro
     mapcalcED(espressaoEd)
-    espressaoclip=ListmapsED+'_EDGE'+`apoioname`+'m= if('+ListmapsED_in+' >= 0, '+ListmapsED+'_EDGE'+`apoioname`+'m_temp2, null())'
-    mapcalcED(espressaoclip)    
-     
-    grass.run_command('r.out.gdal', input=ListmapsED+'_EDGE'+`apoioname`+'m', out=ListmapsED+'_EDGE'+`apoioname`+'m.tif', overwrite = True) 
     
+    espressaoclip=outputname_meco+'= if('+ListmapsED_in+' >= 0, '+ListmapsED+'_EDGE'+`apoioname`+'m_temp2, null())'
+    mapcalcED(espressaoclip)  
+    
+    espressaocore=outputname_core+'= if('+outputname_meco+'==2,1,0)'
+    grass.mapcalc(espressaocore, overwrite = True, quiet = True)     
+    
+    espressaoedge=outputname_edge+'= if('+outputname_meco+'==1,1,0)'
+    grass.mapcalc(espressaoedge, overwrite = True, quiet = True)  
+    
+    
+     
+    grass.run_command('r.out.gdal', input=outputname_meco, out=outputname_meco+'.tif', overwrite = True) 
+    grass.run_command('r.out.gdal', input=outputname_edge, out=outputname_edge+'.tif', overwrite = True)
+    grass.run_command('r.out.gdal', input=outputname_core, out=outputname_core+'.tif', overwrite = True)
+    
+    if len(escale_pct)>0:
+      for pct in escale_pct:
+        pctint=int(pct)
+
+        formatnumber='0000'+`pctint`
+        formatnumber=formatnumber[-4:]        
+        outputname_edge_pct=outputname_edge+'_PCT_esc_'+formatnumber
+        
+        size=getsizepx(outputname_edge, pctint)
+        grass.run_command('r.neighbors', input=outputname_edge, output="temp_pct", method='average', size=size, overwrite = True)
+        espressaoedge=outputname_edge_pct+'=temp_pct*100'
+        grass.mapcalc(espressaoedge, overwrite = True, quiet = True)    
+        grass.run_command('r.out.gdal', input=outputname_edge_pct, out=outputname_edge_pct+'.tif', overwrite = True)
+        grass.run_command('g.remove', type="raster", name='temp_pct', flags='f')
+        
+        
+        
+        
+        
     if calcStatistics:
       createtxt(ListmapsED+'_EDGE'+`apoioname`+'m', dirs, out)
+      
       
     if removeTrash:
       grass.run_command('g.remove', type="raster", name=ListmapsED+"_eroED_"+`apoioname`+'m,'+ListmapsED+'_EDGE'+`apoioname`+'m_temp1,'+ListmapsED+'_EDGE'+`apoioname`+'m_temp2', flags='f')
     
-    x=x+1
+    cont_escale=cont_escale+1
     
     
 def create_EDGE(ListmapsED, escale_ed, dirs, prefix,calcStatistics,removeTrash):
@@ -1114,6 +1152,21 @@ def shannon_diversity(landuse_map,dirout,Raio_Analise):
     os.remove('landuse_map.asc')
     
 #----------------------------------------------------------------------------------
+def percentage_edge():
+  pass
+  
+
+
+
+
+
+
+
+
+
+
+
+
 # GUI
 
 class LS_connectivity(wx.Panel):
@@ -1402,7 +1455,8 @@ class LS_connectivity(wx.Panel):
             
             if self.Habmat: ############ adicionei isso aqui: talvez temos que aplicar as outras funcoes ja nesse mapa?
               ###### as outras funcoes precisam de um mapa binario de entrada? ou pode ser so um mapa habitat/null?
-              create_habmat_single(self.mapa_entrada, prefix = self.output_prefix2)            
+              
+              create_habmat_single(self.mapa_entrada,self.output_prefix2,self.list_habitat_classes)
             if self.Patch==True:   
               
               patchSingle(self.mapa_entrada, self.output_prefix2, self.dirout, self.prepareBIODIM,self.calcStatistics,self.removeTrash)
@@ -1414,7 +1468,7 @@ class LS_connectivity(wx.Panel):
               areaconSingle(self.mapa_entrada, self.output_prefix2, self.escala_frag_con, self.dirout, self.prepareBIODIM, self.calcStatistics, self.removeTrash)
             if self.checEDGE==True:
               
-              create_EDGE_single(self.mapa_entrada, self.escala_ED, self.dirout, self.output_prefix2, self.calcStatistics, self.removeTrash)
+              create_EDGE_single(self.mapa_entrada, self.escala_ED, self.dirout, self.output_prefix2, self.calcStatistics, self.removeTrash,self.list_esc_pct)
              
             if self.Dist==True:
               dist_edge_Single(self.mapa_entrada,self.output_prefix2, self.prepareBIODIM, self.dirout, self.removeTrash)
