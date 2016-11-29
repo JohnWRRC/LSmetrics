@@ -31,7 +31,7 @@ import numpy as np
 import re
 import math
 from sets import Set
-
+import collections
 
 
 ID_ABOUT=101
@@ -46,7 +46,41 @@ ID_EXIT=110
 # como conversa o R com o grass? da pra rodar o script R em BATCH mode?
 
 #----------------------------------------------------------------------------------
-
+def reclass_frag_cor(mappidfrag,dirs):
+  """
+  essa funcao abre o txt cross separa os de transicao validos
+  reclassifica o mapa de pidfrag onde 1
+  """
+  os.chdir(dirs)
+  with open("table_cross.txt") as f:
+      data = f.readlines()
+  
+  contfirst=0
+  list_pidfrag=[]
+  list_pid_cor=[]
+  for i in data:
+      if contfirst>0: # pulando a primeira linha da tabela 
+          if "no data" in i:
+              pass
+          else:
+              lnsplit=i.split(' ')
+              list_pidfrag.append(lnsplit[2].replace(';',''))
+              list_pid_cor.append(lnsplit[4])    
+      contfirst=1
+  list_pidfrag=map(int, list_pidfrag)   
+  list_pid_cor=map(int, list_pid_cor)   
+  counter=collections.Counter(list_pid_cor)
+  
+  txt_rules=open("table_cross_reclass_rules.txt",'w')
+  for i in counter.keys():
+      txt_rules.write(`i`+'='+`counter[i]`+'\n')
+  txt_rules.close()  
+  grass.run_command('r.reclass',input=mappidfrag,output=mappidfrag+'_reclass',rules='table_cross_reclass_rules.txt', overwrite = True)
+  
+  
+  
+  
+  
 def getsizepx(mapbin_HABITAT,esc):
   res = grass.parse_command('g.region', rast=mapbin_HABITAT, flags='m')      
   res3 = float(res['ewres'])  
@@ -388,6 +422,7 @@ def areaFragSingle(map_HABITAT_Single, prefix,list_esc_areaFrag,dirout,prepareBI
 
   x=0
   for a in Lista_escalafragM:
+    
     meters=int(listmeters[x])  
     #print escalafragM
     grass.run_command('r.neighbors', input=map_HABITAT_Single, output=ListmapsFrag+"_ero_"+`meters`+'m', method='minimum', size=a, overwrite = True)
@@ -400,8 +435,67 @@ def areaFragSingle(map_HABITAT_Single, prefix,list_esc_areaFrag,dirout,prepareBI
     
     grass.run_command('g.region', rast=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid")
     nametxtreclass=rulesreclass(ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid", dirout)
-    grass.run_command('r.reclass', input=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid", output=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_AreaHA", rules=nametxtreclass, overwrite = True)    
+    grass.run_command('r.reclass', input=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid", output=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_AreaHA", rules=nametxtreclass, overwrite = True)   
     os.remove(nametxtreclass)
+    
+    # identificando branch tampulins e corredores
+    
+    
+    expressao3='temp_BSSC=if(isnull('+ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_AreaHA"+'),'+map_HABITAT_Single+')'
+    grass.mapcalc(expressao3, overwrite = True, quiet = True)    
+     
+    expression1="MapaBinario=temp_BSSC"
+    grass.mapcalc(expression1, overwrite = True, quiet = True)    
+    grass.run_command('g.region',rast="MapaBinario")
+    expression2="A=MapaBinario"
+    grass.mapcalc(expression2, overwrite = True, quiet = True)
+    
+    ##r.colors map=A color=wave
+    grass.run_command('g.region',rast="MapaBinario")
+    expression3="MapaBinario_A=if(A[0,0]==0 && A[0,-1]==1 && A[1,-1]==0 && A[1,0]==1,1,A)"
+    grass.mapcalc(expression3, overwrite = True, quiet = True)
+    expression4="A=MapaBinario_A"
+    grass.mapcalc(expression4, overwrite = True, quiet = True)
+    expression5="MapaBinario_AB=if(A[0,0]==0 && A[-1,0]==1 && A[-1,1]==0 && A[0,1]==1,1,A)"
+    grass.mapcalc(expression5, overwrite = True, quiet = True) 
+    expression6="A=MapaBinario_AB"
+    grass.mapcalc(expression6, overwrite = True, quiet = True)
+    expression7="MapaBinario_ABC=if(A[0,0]==0 && A[0,1]==1 && A[1,1]==0 && A[1,0]==1,1,A)"
+    grass.mapcalc(expression7, overwrite = True, quiet = True)
+    expression8="A=MapaBinario_ABC"
+    grass.mapcalc(expression8, overwrite = True, quiet = True)
+    expression9="MapaBinario_ABCD=if(A[0,0]==0 && A[1,0]==1 && A[1,1]==0 && A[0,1]==1,1,A)"
+    grass.mapcalc(expression9, overwrite = True, quiet = True)
+   
+    expressao4='MapaBinario_ABCD1=if(MapaBinario_ABCD==0,null(),1)'
+    grass.mapcalc(expressao4, overwrite = True, quiet = True)    
+    grass.run_command('r.clump', input='MapaBinario_ABCD1', output="MapaBinario_ABCD1_pid", overwrite = True)
+    
+    grass.run_command('r.neighbors', input='MapaBinario_ABCD1_pid', output='MapaBinario_ABCD1_pid_mode', method='mode', size=3, overwrite = True)
+    grass.run_command('r.cross', input=ListmapsFrag+"_FRAG"+`meters`+'m_mata_clump_pid,MapaBinario_ABCD1_pid_mode',out=ListmapsFrag+"_FRAG"+`meters`+'m_mata_clump_pid_cross_corredor',overwrite = True)
+    cross_TB = grass.read_command('r.stats', input=ListmapsFrag+"_FRAG"+`meters`+'m_mata_clump_pid_cross_corredor', flags='l')  # pegando a resolucao
+    print cross_TB 
+    txt=open("table_cross.txt",'w')
+    txt.write(cross_TB)
+    txt.close()
+    
+    reclass_frag_cor('MapaBinario_ABCD1_pid', dirout)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     if prepareBIODIM:
       #grass.run_command('r.out.gdal',input=ListmapsFrag+"_FRAG"+`meters`+"m_mata_clump_pid",out=ListmapsFrag+"_FRAG"+`meters`+"m_PID.tif")
@@ -627,6 +721,7 @@ def Patch(Listmapspatch_in, prefix,dirout,prepareBIODIM,calcStatistics,removeTra
 # Metrics for functional connectivity area/ID (CON)
 
 def areaconSingle(mapHABITAT_Single, prefix,escala_frag_con,dirout,prepareBIODIM,calcStatistics,removeTrash):
+  os.chdir(dirout)
   """
   Function for a single map
   This function calculates functional patch area in a map (CON), considering functional connectivity 
@@ -840,7 +935,7 @@ def create_EDGE_single(ListmapsED_in, escale_ed, dirs, prefix,calcStatistics,rem
     grass.run_command('r.out.gdal', input=outputname_meco, out=outputname_meco+'.tif', overwrite = True) 
     grass.run_command('r.out.gdal', input=outputname_edge, out=outputname_edge+'.tif', overwrite = True)
     grass.run_command('r.out.gdal', input=outputname_core, out=outputname_core+'.tif', overwrite = True)
-    
+    print '>>>>>>>>>>>>>>>>>>>>',escale_pct
     if len(escale_pct)>0:
       for pct in escale_pct:
         pctint=int(pct)
