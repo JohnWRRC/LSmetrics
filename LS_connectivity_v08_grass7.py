@@ -1043,7 +1043,7 @@ def create_EDGE_single(ListmapsED_in, escale_ed, dirs, prefix,calcStatistics,rem
     cont_escale=cont_escale+1
     
     
-def create_EDGE(ListmapsED, escale_ed, dirs, prefix,calcStatistics,removeTrash,escale_pct):
+def create_EDGE(ListmapsED, escale_ed, dirs, prefix,calcStatistics,removeTrash,escale_pct,checkCalc_PCTedge):
   os.chdir(dirs)
   """
   Function for a series of maps
@@ -1109,7 +1109,7 @@ def create_EDGE(ListmapsED, escale_ed, dirs, prefix,calcStatistics,removeTrash,e
       grass.run_command('r.out.gdal', input=outputname_meco, out=outputname_meco+'.tif', overwrite = True) 
       grass.run_command('r.out.gdal', input=outputname_edge, out=outputname_edge+'.tif', overwrite = True)
       grass.run_command('r.out.gdal', input=outputname_core, out=outputname_core+'.tif', overwrite = True)
-      if len(escale_pct)>0:
+      if len(escale_pct)>0 and checkCalc_PCTedge==True:
         for pct in escale_pct:
           pctint=int(pct)
       
@@ -1432,6 +1432,7 @@ class LS_connectivity(wx.Panel):
         self.dirout=''
         self.chebin=''
         self.checEDGE=''
+        self.checkCalc_PCTedge=''
         self.checPCT=''
         self.check_diversity=''
         self.analise_rayos=''
@@ -1469,11 +1470,11 @@ class LS_connectivity(wx.Panel):
         
         self.editname = wx.TextCtrl(self, 190, '', wx.Point(160, 82),
                                     wx.Size(100,-1)) #Regular expression
-        self.editname = wx.TextCtrl(self, 191, '', wx.Point(270,185), wx.Size(80,-1)) #escala
-        self.editname = wx.TextCtrl(self, 192, '', wx.Point(270,210), wx.Size(80,-1)) #borda
-        self.editname = wx.TextCtrl(self, 194, '', wx.Point(270,235), wx.Size(80,-1)) #percentages
-        self.editname = wx.TextCtrl(self, 193, '', wx.Point(270,307), wx.Size(80,-1)) #habitat maps
-        self.editname = wx.TextCtrl(self, 195, '', wx.Point(270,331), wx.Size(80,-1)) #raios de influencia para diversidade de shannon
+        self.editname = wx.TextCtrl(self, 191, '', wx.Point(250,185), wx.Size(80,-1)) #gap crossing
+        self.editname = wx.TextCtrl(self, 192, '', wx.Point(250,210), wx.Size(80,-1)) #list deph edge
+        self.editname = wx.TextCtrl(self, 194, '', wx.Point(104,270), wx.Size(80,-1)) #list extents percentages maps
+        self.editname = wx.TextCtrl(self, 193, '', wx.Point(250,145), wx.Size(80,-1)) #habitat maps
+        self.editname = wx.TextCtrl(self, 195, '', wx.Point(250,330), wx.Size(80,-1)) #raios de influencia para diversidade de shannon
         
         wx.EVT_TEXT(self, 190, self.EvtText)
         wx.EVT_TEXT(self, 191, self.EvtText)
@@ -1506,18 +1507,30 @@ class LS_connectivity(wx.Panel):
        #static text
         
         #self.SelecMetrcis = wx.StaticText(self,-1,"Choose Metric:", wx.Point(15,150))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Create Habitat Map:", wx.Point(20,150))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Codes for habitat:", wx.Point(150,150))
+
+        self.SelecMetrcis = wx.StaticText(self,-1,"Conectivity:", wx.Point(20,190))
+        self.SelecMetrcis = wx.StaticText(self,-1,"List Gap crossing (m):", wx.Point(140,190))
         
+        self.SelecMetrcis = wx.StaticText(self,-1,"Core/Edge map:", wx.Point(20,218))
+        self.SelecMetrcis = wx.StaticText(self,-1,"List Edge deph (m):", wx.Point(140,218))
         
-        self.SelecMetrcis = wx.StaticText(self,-1,"Calculate Statistics:", wx.Point(20,275))
-        self.SelecMetrcis = wx.StaticText(self,-1,"Create Distance Map:", wx.Point(20,295))
-        self.SelecMetrcis = wx.StaticText(self,-1,"Create Habitat Map:", wx.Point(20,315))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Parcentage:", wx.Point(20,248))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Habitat", wx.Point(90,248))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Edge/Core", wx.Point(156,248))
+        
+        self.SelecMetrcis = wx.StaticText(self,-1,"Extents:", wx.Point(50,275))
+        
+        self.SelecMetrcis = wx.StaticText(self,-1,"Calculate Statistics:", wx.Point(20,360))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Distance from edge :", wx.Point(20,310))
+        
         self.SelecMetrcis = wx.StaticText(self,-1,"Create Shannon Diversity:", wx.Point(20,335))
-        self.SelecMetrcis = wx.StaticText(self,-1,"List of rays  Unit(m):", wx.Point(170,335))
-        self.SelecMetrcis = wx.StaticText(self,-1,"Codes for habitat:", wx.Point(170,315))
+        self.SelecMetrcis = wx.StaticText(self,-1,"Extents (m):", wx.Point(170,335))
+        
         self.SelecMetrcis = wx.StaticText(self,-1,"Regular Expression:", wx.Point(165, 62))
-        self.SelecMetrcis = wx.StaticText(self,-1,"List of scales for Area Path or Area Frag Unit(m):", wx.Point(20,190))
-        self.SelecMetrcis = wx.StaticText(self,-1,"List of scales for EDGE metrics  Unit(m):", wx.Point(20,218))
-        self.SelecMetrcis = wx.StaticText(self,-1,"List of scales for Percentage metrics  Unit(m):", wx.Point(20,242))
+        #self.SelecMetrcis = wx.StaticText(self,-1,"List of scales for Area Path or Area Frag Unit(m):", wx.Point(20,190))
+        
         
         
         wx.EVT_TEXT(self, 185, self.EvtText)
@@ -1529,49 +1542,55 @@ class LS_connectivity(wx.Panel):
         #______________________________________________________________________________________________________________
         # Checkbox
 
-        self.insure = wx.CheckBox(self, 96, "AH Patch.", wx.Point(70,150))
-        wx.EVT_CHECKBOX(self, 96,   self.EvtCheckBox)     
+        #self.insure = wx.CheckBox(self, 96, "AH Patch.", wx.Point(70,150))
+        #wx.EVT_CHECKBOX(self, 96,   self.EvtCheckBox)     
         
-        self.insure = wx.CheckBox(self, 95, "AH Frag.", wx.Point(143,150))
-        wx.EVT_CHECKBOX(self, 95,   self.EvtCheckBox)   
+        #self.insure = wx.CheckBox(self, 95, "AH Frag.", wx.Point(143,150))
+        #wx.EVT_CHECKBOX(self, 95,   self.EvtCheckBox)   
         
-        self.insure = wx.CheckBox(self, 97, "AH Con.", wx.Point(217,150))
+        self.insure = wx.CheckBox(self, 97, "", wx.Point(110,190)) # area con connectivity
         wx.EVT_CHECKBOX(self, 97,   self.EvtCheckBox)  
         
-        self.insure = wx.CheckBox(self, 150, "EDGE", wx.Point(295,150))
+        self.insure = wx.CheckBox(self, 150, "", wx.Point(110,218)) #EDGE/Core
         wx.EVT_CHECKBOX(self, 150,   self.EvtCheckBox)  
-        """
-        essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
-               """        
-        self.insure = wx.CheckBox(self, 151, "PCT", wx.Point(20,150))
+        #"""
+        #essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
+               #"""        
+        self.insure = wx.CheckBox(self, 151, "", wx.Point(135,248)) # pct habitat
         wx.EVT_CHECKBOX(self, 151,   self.EvtCheckBox)            
                 
-        
-        """
-        essa funcao a baixo eh o botao para saber se vai ou nao calcular a statistica para os mapas
-        """
-        self.insure = wx.CheckBox(self, 98, "", wx.Point(150,275)) # self.calcStatistics botaozainho da statisica
-        wx.EVT_CHECKBOX(self, 98,   self.EvtCheckBox)  
+      
         
         
-        """
-        essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
-        """
-        self.insure = wx.CheckBox(self, 99, "", wx.Point(150,295)) # self.Distedge botaozainho da distancia em relacao a borda
+        #"""
+        #essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de distancia euclidiana
+        #"""
+        self.insure = wx.CheckBox(self, 99, "", wx.Point(150,310)) # self.Distedge botaozainho da distancia em relacao a borda
         wx.EVT_CHECKBOX(self, 99,   self.EvtCheckBox)  
         
         
-        """
-        essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de habitat
-        """
-        self.insure = wx.CheckBox(self, 100, "", wx.Point(150,315)) # Criando mapa de habitat botaozainho self.Habmat
+        #"""
+        #essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de habitat
+        #"""
+        self.insure = wx.CheckBox(self, 100, "", wx.Point(120,150)) # Criando mapa de habitat botaozainho self.Habmat
         wx.EVT_CHECKBOX(self, 100,   self.EvtCheckBox)   
         
         """
         essa funcao a baixo eh o botao para saber se vai ou nao calcular o mapa de diveridade de shannon
         """
-        self.insure = wx.CheckBox(self, 101, "", wx.Point(150,335)) # Criando mapa de habitat botaozainho self.Habmat
-        wx.EVT_CHECKBOX(self, 101,   self.EvtCheckBox)            
+        self.insure = wx.CheckBox(self, 101, "", wx.Point(150,335)) # Criandomapa de diversidade de shannon
+        wx.EVT_CHECKBOX(self, 101,   self.EvtCheckBox)   
+        
+        
+        self.insure = wx.CheckBox(self, 152, "", wx.Point(215,248)) # pct edge edge/core preciso implementar
+        wx.EVT_CHECKBOX(self, 152,   self.EvtCheckBox)   
+        
+         
+        """
+        essa funcao a baixo eh o botao para saber se vai ou nao calcular a statistica para os mapas
+        """
+        self.insure = wx.CheckBox(self, 98, "", wx.Point(150,360)) # self.calcStatistics botaozainho da statisica
+        wx.EVT_CHECKBOX(self, 98,   self.EvtCheckBox)       
         
                 
         
@@ -1579,7 +1598,7 @@ class LS_connectivity(wx.Panel):
         
         #______________________________________________________________________________________________________________
         #Radio Boxes
-        self.dispersiveList = ['Multiple', 'Single',          ]
+        self.dispersiveList = ['Single', 'Multiple',          ]
         rb = wx.RadioBox(self, 92, "Choose form calculate", wx.Point(20, 62), wx.DefaultSize,
                         self.dispersiveList, 2, wx.RA_SPECIFY_COLS)
         wx.EVT_RADIOBOX(self, 92, self.EvtRadioBox)
@@ -1707,12 +1726,13 @@ class LS_connectivity(wx.Panel):
             if self.Habmat: ############ adicionei isso aqui: talvez temos que aplicar as outras funcoes ja nesse mapa?
               ###### as outras funcoes precisam de um mapa binario de entrada? ou pode ser so um mapa habitat/null?
               create_habmat(self.ListMapsGroupCalc, prefix = self.output_prefix2)            
-            if self.Patch==True:
-              self.ListmapsPatch=Patch(self.ListMapsGroupCalc, self.output_prefix2, self.dirout, self.prepareBIODIM,self.calcStatistics,self.removeTrash) ####### john precisa atribuir isso aqui?
+            
+             
             
             if self.checEDGE==True:
-              self.list_meco=create_EDGE(self.ListMapsGroupCalc, self.escala_ED, self.dirout, self.output_prefix2, self.calcStatistics, self.removeTrash,self.list_esc_pct)     
+              self.list_meco=create_EDGE(self.ListMapsGroupCalc, self.escala_ED, self.dirout, self.output_prefix2, self.calcStatistics, self.removeTrash,self.list_esc_pct,self.checkCalc_PCTedge)     
               areaFrag(self.ListMapsGroupCalc, self.output_prefix2,self.escala_ED, self.dirout, self.prepareBIODIM,self.calcStatistics,self.removeTrash,self.list_meco,self.checEDGE)
+              
             
             if self.Frag==True:
               self.list_meco=[]
@@ -1721,10 +1741,10 @@ class LS_connectivity(wx.Panel):
               areaFrag(self.ListMapsGroupCalc, self.output_prefix2, self.escala_frag_con, self.dirout, self.prepareBIODIM,self.calcStatistics,self.removeTrash,self.list_meco,self.checEDGE)
               
             if self.Cone==True:
+              self.ListmapsPatch=Patch(self.ListMapsGroupCalc, self.output_prefix2, self.dirout, self.prepareBIODIM,self.calcStatistics,self.removeTrash)
               areacon(self.ListMapsGroupCalc,self.output_prefix2, self.escala_frag_con, self.dirout, self.prepareBIODIM, self.calcStatistics, self.removeTrash) 
               
-            if self.checEDGE==True:
-              self.list_meco=create_EDGE(self.ListMapsGroupCalc, self.escala_ED, self.dirout, self.output_prefix2, self.calcStatistics, self.removeTrash,self.list_esc_pct)
+            
             if self.Dist==True:
               dist_edge(self.ListMapsGroupCalc,self.output_prefix2, self.prepareBIODIM, self.dirout, self.removeTrash)
             
@@ -1883,13 +1903,19 @@ class LS_connectivity(wx.Panel):
         if event.GetId()==151: #check EDGE
           if int(event.Checked())==1:
             self.checPCT=True
-            self.logger.AppendText('EvtCheckBox:\nMetric Selected: Percentage \n')
+            self.logger.AppendText('EvtCheckBox:\nMetric Selected: Percentage habitat \n')
           else:
             self.checPCT=False
-            self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Percentage \n')           
+            self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Percentage habitat \n')           
         
         # CRIAR UM BOTAO E UM EVENTO DESSES AQUI, PARA O MAPA DE DIST (mesmo que ele so seja usado para o biodim)
-                  
+        if event.GetId()==152: #check EDGE
+          if int(event.Checked())==1:
+            self.checkCalc_PCTedge=True
+            self.logger.AppendText('EvtCheckBox:\nMetric Selected: Percentage from edge/core \n')
+          else:
+            self.checkCalc_PCTedge=False
+            self.logger.AppendText('EvtCheckBox:\nMetric Not Selected: Percentage from edge/core \n')             
         
          
             
